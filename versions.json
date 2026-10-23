@@ -10,8 +10,8 @@
     "notes": "vuelve la barra con colores via statusLine; el mod mantiene el script"
   },
   "mods": {
-    "latest": "0.1.1",
+    "latest": "0.1.2",
     "minSafe": "0.1.0",
-    "notes": "instalar explica el bloque statusLine"
+    "notes": "el repo ahora es publico"
   }
 }

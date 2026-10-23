@@ -1,12 +1,12 @@
 # claude-mods
 
-Mods privados para Claude Code: una **línea de estado** y un **panel de desarrollo**, con avisos de actualización para parchar bugs y vulnerabilidades a tiempo.
+Mods para Claude Code: una **línea de estado** y un **panel de desarrollo**, con avisos de actualización para parchar bugs y vulnerabilidades a tiempo.
 
 | Mod | Qué hace | Versión |
 | --- | --- | --- |
 | [`statusline`](#statusline) | Barra de estado con colores: modelo y esfuerzo, rama git, cuenta de GitHub y contexto usado | 0.3.0 |
 | [`dev-panel`](#dev-panel) | Panel lateral: tarea, costo y límites, actividad, puertos y git de todos tus repos | 0.6.2 |
-| [`mods`](#el-skill-mods) | Skill `/mods:mods`: instala, actualiza y revisa los otros mods por ti | 0.1.1 |
+| [`mods`](#el-skill-mods) | Skill `/mods:mods`: instala, actualiza y revisa los otros mods por ti | 0.1.2 |
 
 Se instalan juntos y **no repiten datos**:
 
@@ -25,7 +25,7 @@ Se instalan juntos y **no repiten datos**:
 
 - Claude Code.
 - `gh` (GitHub CLI) con sesión iniciada: `gh auth status`.
-- Acceso de lectura a este repo privado. La cuenta activa de `gh` debe ser una que lo tenga.
+- El repo es público: no hace falta ningún acceso especial para instalar. `gh` solo se usa para el aviso de versiones y para el skill `/mods:mods`.
 
 **Desde una sesión de Claude Code**
 
@@ -200,10 +200,10 @@ Quien tenga una versión por debajo de `minSafe` verá el aviso urgente en menos
 **Riesgo que queda.** Quien pueda hacer push a `main` controla el código que se instala. Mitigaciones:
 
 - Activar 2FA en la cuenta dueña del repo, de preferencia con passkey.
-- No dar acceso de escritura a nadie más. La protección de ramas no existe en repos privados del plan gratuito.
+- No dar acceso de escritura a nadie más, y proteger `main` (Settings → Branches): exigir pull request antes de mezclar y bloquear force-push.
 - Iniciar `gh` sin permisos que los mods no usan, por ejemplo `gh auth refresh -h github.com --remove-scopes delete_repo`.
 
-¿Encontraste un problema de seguridad? Avisa al mantenedor en privado antes de abrir un issue.
+¿Encontraste un problema de seguridad? No abras un issue público: usa «Report a vulnerability» en la pestaña Security del repo, o avisa al mantenedor en privado.
 
 ## Estructura del repo
 
@@ -227,8 +227,8 @@ claude-mods/
 
 | Síntoma | Causa y solución |
 | --- | --- |
-| `marketplace add` falla | La cuenta activa de `gh` no tiene acceso al repo. Cambia con `gh auth switch` |
-| No aparece ningún aviso | Revisa `gh auth status` y que la cuenta pueda leer el repo |
+| `marketplace add` falla | Revisa tu conexión y que `git` funcione: el repo es público y no necesita cuenta |
+| No aparece ningún aviso | El chequeo usa `gh`: revisa `gh auth status`. Sin `gh` o sin red, se salta en silencio |
 | Sigue la versión vieja tras actualizar | Ejecuta `/reload-plugins` o abre una sesión nueva |
 | No veo la barra | Falta el bloque `statusLine` en `settings.json`, o aún no abriste una sesión con el mod para que copie el script |
 | Instalé una versión anterior a los avisos | No trae el chequeo: actualiza una vez a mano |

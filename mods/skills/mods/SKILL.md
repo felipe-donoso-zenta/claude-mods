@@ -7,7 +7,7 @@ allowed-tools: Bash(claude plugin:*), Bash(gh auth status), Bash(gh api repos/fe
 
 # /mods: instalar, actualizar y revisar claude-mods
 
-Gestionas los mods del marketplace `claude-mods` (repo privado `felipe-donoso-zenta/claude-mods`). Tienes tres modos según el argumento: `instalar`, `actualizar` y `estado`. Sin argumento, haz `estado` y ofrece lo que corresponda (instalar lo que falte, actualizar lo atrasado).
+Gestionas los mods del marketplace `claude-mods` (repo público `felipe-donoso-zenta/claude-mods`). Tienes tres modos según el argumento: `instalar`, `actualizar` y `estado`. Sin argumento, haz `estado` y ofrece lo que corresponda (instalar lo que falte, actualizar lo atrasado).
 
 Mods del catálogo: `statusline`, `dev-panel`. (`mods` es este skill.)
 
@@ -25,7 +25,7 @@ gh auth status
 ```
 
 - Sin sesión: dile que ejecute `! gh auth login` y espera.
-- Con sesión pero la cuenta activa no tiene acceso al repo, el paso 2 fallará. En ese caso sugiere `! gh auth switch` y vuelve a intentar.
+- `gh` solo se usa para leer `versions.json`; el repo es público, así que no hace falta una cuenta con acceso especial.
 
 ## Paso 2: marketplace
 
