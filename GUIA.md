@@ -31,12 +31,35 @@ claude plugin install dev-panel@claude-mods
 claude plugin install statusline@claude-mods
 ```
 
-## 3. Saber en que version estas
+## 3. Que hace `statusline`
+
+Dibuja una sola linea, con colores, justo encima del prompt:
+
+```
+✺ sonnet-5-5  │  ⎇ main ●3 ↑1  │  ◉ felipe-donoso-zenta  │  ▰▰▱▱▱▱▱▱▱▱ 9%
+```
+
+| Segmento | Que muestra | Se refresca |
+| --- | --- | --- |
+| `✺` y modelo | Glifo que rota entre `✻ ✽ ✺ ✹` y el nombre corto del modelo en uso | cada 1 s |
+| `⎇ rama` | Rama de git; solo aparece dentro de un repo. `✓` sin cambios o `●N` con N archivos modificados; `↑N` (verde) commits por subir, `↓N` (rojo) commits por bajar | cada 5 s |
+| `◉ cuenta` | Cuenta activa de `gh`, para saber con cual haras commit o push | cada 60 s |
+| `▰▱` y `%` | Contexto usado de la conversacion en 10 celdas: verde hasta 60 %, amarillo desde 60 %, rojo desde 80 % (conviene `/compact`) | cada 1 s |
+| `↑ vX` o `⚠ vX desactualizado` | Solo si el mod esta atras: hay version nueva, o la tuya tiene bugs o vulnerabilidades conocidas. Tambien sale un toast | al iniciar y cada 6 h |
+
+Notas:
+
+- No tiene comandos ni opciones.
+- Se oculta mientras Claude muestra una encuesta.
+- No es la linea de estado de abajo (`statusLine` en `settings.json`). Si sigues viendo dos barras, quita ese bloque de `settings.json`.
+- Para ver su version: el segmento de aviso solo aparece cuando esta desactualizado; usa `claude plugin list`.
+
+## 4. Saber en que version estas
 
 - `dev-panel`: escribe `/panel version`.
 - En cualquier caso: `claude plugin list`.
 
-## 4. Avisos de actualizacion
+## 5. Avisos de actualizacion
 
 Al iniciar sesion, y luego cada 6 horas, cada mod compara su version con `versions.json` del repo (leido con `gh`, usando tu propia sesion de GitHub):
 
@@ -47,7 +70,7 @@ Al iniciar sesion, y luego cada 6 horas, cada mod compara su version con `versio
 
 Si no hay red o `gh` no tiene sesion, el chequeo se salta en silencio.
 
-## 5. Actualizar
+## 6. Actualizar
 
 ```
 claude plugin marketplace update claude-mods
@@ -59,7 +82,7 @@ Luego `/reload-plugins` o abre una sesion nueva.
 
 > Las instalaciones anteriores a estas versiones no traen el chequeo: hay que actualizar una vez a mano.
 
-## 6. Publicar una version nueva (mantenedor)
+## 7. Publicar una version nueva (mantenedor)
 
 1. Sube `version` en `<mod>/.claude-plugin/plugin.json` (semver: patch para fixes, minor para features).
 2. Edita `versions.json`:
@@ -77,7 +100,7 @@ Ejemplo de `versions.json`:
 }
 ```
 
-## 7. Estructura del repo
+## 8. Estructura del repo
 
 ```
 claude-mods/
@@ -89,7 +112,7 @@ claude-mods/
     └── hooks/register.tsx            # codigo del mod
 ```
 
-## 8. Problemas comunes
+## 9. Problemas comunes
 
 - **No aparece el aviso**: revisa `gh auth status` y que la cuenta tenga acceso al repo.
 - **`marketplace add` falla**: la cuenta activa de `gh` no es la que tiene acceso; cambia con `gh auth switch`.
