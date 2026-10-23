@@ -524,144 +524,159 @@ export const register: Register = on => {
     const isOptionsFolded = fold.includes(OPTIONS_KEY)
     const toggleFold = (name: string) => update($, folded, f => (f.includes(name) ? f.filter(n => n !== name) : [...f, name]))
 
-    const pal = THEMES[look.theme] ?? THEMES.claude
-    const colorFor = (percent: number) => (percent >= 90 ? pal.bad : percent >= 75 ? pal.warn : pal.accent)
+    const pal = THEMES[look.theme] ?? THEMES.claude!
+    // Green while there is room, amber as it fills, red when it is about to run out.
+    const colorFor = (percent: number) => (percent >= 90 ? pal.bad : percent >= 75 ? pal.warn : pal.ok)
     const isShown = (id: Section) => !look.hidden.includes(id)
-    // Sections sit flush against each other: the headings already separate them.
-    const gap = null
+    // A blank line between sections; the compact column is too short for it.
+    const gap = look.isCompact ? null : <Text> </Text>
     const doing = list.find(t => t.status === 'in_progress')
     const done = list.filter(t => t.status === 'completed').length
     const room = look.isCompact ? 1 : MAX_FILES
     // Compact is a narrow column, about as wide as it is tall: short bars, clipped lines, one-glyph buttons.
-    const cells = look.isCompact ? 6 : 10
+    const cells = look.isCompact ? 6 : 12
+    const ruleWidth = look.isCompact ? COMPACT_WIDTH : 38
     const clip = (text: string) => (look.isCompact && text.length > COMPACT_WIDTH ? `${text.slice(0, COMPACT_WIDTH - 1)}…` : text)
     const themeName = look.theme.padEnd(6)
     const control = (isOn: boolean) => (isOn ? '●' : '○')
     const model = now_.model || (s ? shortModel(s.model) : '—')
     const effort = now_.effort || 'auto'
     const toggleSection = (id: Section) => restyle($, o => ({ ...o, hidden: o.hidden.includes(id) ? o.hidden.filter(h => h !== id) : [...o.hidden, id] }))
-    const nextTheme = () => restyle($, o => ({ ...o, theme: THEME_NAMES[(THEME_NAMES.indexOf(o.theme) + 1) % THEME_NAMES.length] }))
+    const nextTheme = () => restyle($, o => ({ ...o, theme: THEME_NAMES[(THEME_NAMES.indexOf(o.theme) + 1) % THEME_NAMES.length] ?? o.theme }))
     const nextBudget = () => setPrefs($, o => ({ ...o, budgetUsd: BUDGET_STEPS[(BUDGET_STEPS.indexOf(o.budgetUsd) + 1) % BUDGET_STEPS.length] ?? 0 }))
     const budgetPercent = s && p.budgetUsd > 0 ? (s.usd / p.budgetUsd) * 100 : 0
     const nextMin = () => setPrefs($, o => ({ ...o, minSeconds: MIN_STEPS[(MIN_STEPS.indexOf(o.minSeconds) + 1) % MIN_STEPS.length] ?? 20 }))
 
     const frame = (body: RenderNode) => body
 
-    // Always the last lines of the pane: what answers, and how hard it thinks.
-    const footer = (
-      <Box flexDirection="column">
-        <Text dimColor>{look.isCompact ? '──────────────' : '──────────────────────────────'}</Text>
+    /** `▌ TITLE ───── detail`: one look for every section, so the eye finds where each begins. */
+    const heading = (icon: string, title: string, detail = '') => {
+      const used = icon.length + title.length + detail.length + 4
+      return (
+        <Box flexDirection="row">
+          <Text bold color={pal.accent}>{icon} {title.toUpperCase()} </Text>
+          <Text dimColor>{'─'.repeat(Math.max(2, ruleWidth - used))}</Text>
+          {detail === '' ? null : <Text dimColor> {detail}</Text>}
+        </Box>
+      )
+    }
+
+    /** `label ████░░░░ 42%  tail`: labels share one width, so the bars line up. */
+    const meter = (label: string, percent: number, tail = '') => {
+      const filled = Math.round((Math.min(Math.max(percent, 0), 100) / 100) * cells)
+      return (
         <Text>
-          <Text dimColor>modelo </Text>
-          <Text color={pal.accent}>{clip(model)}</Text>
+          <Text dimColor>{label.padEnd(look.isCompact ? 4 : 10)}</Text>
+          <Text color={colorFor(percent)}>{'█'.repeat(filled)}</Text>
+          <Text dimColor>{'░'.repeat(cells - filled)}</Text>
+          <Text bold color={colorFor(percent)}> {String(Math.round(percent)).padStart(3)}%</Text>
+          {tail === '' || look.isCompact ? null : <Text dimColor>  {tail}</Text>}
         </Text>
+      )
+    }
+
+    // Always the first line of the pane: what answers, and how hard it thinks.
+    const header = (
+      <Box flexDirection="column">
         <Text>
-          <Text dimColor>esfuerzo </Text>
+          <Text bold color={pal.accent}>◆ {clip(model)}</Text>
+          <Text dimColor>  esfuerzo </Text>
           <Text color={effort === 'max' || effort === 'xhigh' ? pal.warn : pal.accent}>{effort}</Text>
         </Text>
+        {gap}
       </Box>
     )
 
     if (screen === 'settings') {
       const row = (label: string, button: RenderNode) => (
         <Box flexDirection="row">
-          <Text dimColor>{label.padEnd(look.isCompact ? 9 : 14)}</Text>
+          <Text dimColor>  {label.padEnd(look.isCompact ? 9 : 14)}</Text>
           {button}
         </Box>
       )
       return frame(
         <Box flexDirection="column">
-          <Text bold color={pal.accent}>Ajustes</Text>
+          {header}
+          {heading('⚙', 'Ajustes')}
           {gap}
           <Text bold>Avisos</Text>
-          {row('Avisos', <Button key="notify" plain hotkey="a" label={`${control(p.isNotifyOn)} ${p.isNotifyOn ? 'activados' : 'apagados'}`} onPress={() => setPrefs($, o => ({ ...o, isNotifyOn: !o.isNotifyOn }))} />)}
-          {row('Sonido', <Button key="sound" plain hotkey="s" label={`${control(p.isSoundOn)} ${p.isSoundOn ? 'sí' : 'no'}`} onPress={() => setPrefs($, o => ({ ...o, isSoundOn: !o.isSoundOn }))} />)}
-          {row('Permisos', <Button key="permission" plain hotkey="p" label={`${control(p.isPermissionOn)} ${p.isPermissionOn ? 'avisar' : 'no'}`} onPress={() => setPrefs($, o => ({ ...o, isPermissionOn: !o.isPermissionOn }))} />)}
-          {row('Errores', <Button key="error" plain hotkey="e" label={`${control(p.isErrorOn)} ${p.isErrorOn ? 'avisar' : 'no'}`} onPress={() => setPrefs($, o => ({ ...o, isErrorOn: !o.isErrorOn }))} />)}
-          {row(look.isCompact ? 'Desde' : 'Turno desde', <Button key="min" plain hotkey="m" label={`${String(p.minSeconds).padStart(3)} s`} onPress={nextMin} />)}
-          {row('Alertas', <Button key="alert" plain hotkey="l" label={`${control(p.isAlertOn)} ${p.isAlertOn ? 'activas' : 'apagadas'}`} onPress={() => setPrefs($, o => ({ ...o, isAlertOn: !o.isAlertOn }))} />)}
-          {row('Presupuesto', <Button key="budget" plain hotkey="u" label={p.budgetUsd > 0 ? `$${String(p.budgetUsd).padEnd(6)}` : 'sin tope '} onPress={nextBudget} />)}
-          <Button
-            key="test"
-            plain
-            hotkey="x"
-            label="probar avisos"
-            onPress={() => {
-              $.ui.toast('Prueba: listo')
-              void play($, 'done').then(() => play($, 'ask')).then(() => play($, 'problem'))
-            }}
-          />
+          {row('Avisos', <Button key="notify" plain hotkey="a" label={`${control(p.isNotifyOn)} ${p.isNotifyOn ? 'activados' : 'apagados'}  [a]`} onPress={() => setPrefs($, o => ({ ...o, isNotifyOn: !o.isNotifyOn }))} />)}
+          {row('Sonido', <Button key="sound" plain hotkey="s" label={`${control(p.isSoundOn)} ${p.isSoundOn ? 'sí' : 'no'}  [s]`} onPress={() => setPrefs($, o => ({ ...o, isSoundOn: !o.isSoundOn }))} />)}
+          {row('Permisos', <Button key="permission" plain hotkey="p" label={`${control(p.isPermissionOn)} ${p.isPermissionOn ? 'avisar' : 'no'}  [p]`} onPress={() => setPrefs($, o => ({ ...o, isPermissionOn: !o.isPermissionOn }))} />)}
+          {row('Errores', <Button key="error" plain hotkey="e" label={`${control(p.isErrorOn)} ${p.isErrorOn ? 'avisar' : 'no'}  [e]`} onPress={() => setPrefs($, o => ({ ...o, isErrorOn: !o.isErrorOn }))} />)}
+          {row(look.isCompact ? 'Desde' : 'Turno desde', <Button key="min" plain hotkey="m" label={`${String(p.minSeconds).padStart(3)} s  [m]`} onPress={nextMin} />)}
+          {row('Alertas', <Button key="alert" plain hotkey="l" label={`${control(p.isAlertOn)} ${p.isAlertOn ? 'activas' : 'apagadas'}  [l]`} onPress={() => setPrefs($, o => ({ ...o, isAlertOn: !o.isAlertOn }))} />)}
+          {row('Presupuesto', <Button key="budget" plain hotkey="u" label={`${p.budgetUsd > 0 ? `$${String(p.budgetUsd).padEnd(6)}` : 'sin tope '}  [u]`} onPress={nextBudget} />)}
+          {row('', (
+            <Button
+              key="test"
+              plain
+              hotkey="x"
+              label="♪ probar avisos  [x]"
+              onPress={() => {
+                $.ui.toast('Prueba: listo')
+                void play($, 'done').then(() => play($, 'ask')).then(() => play($, 'problem'))
+              }}
+            />
+          ))}
           {gap}
           <Text bold>Aspecto</Text>
-          {row('Tema', <Button key="theme" plain hotkey="t" label={themeName} onPress={nextTheme} />)}
-          {row('Vista', <Button key="compact" plain hotkey="c" label={look.isCompact ? 'compacta' : 'completa '} onPress={() => restyle($, o => ({ ...o, isCompact: !o.isCompact }))} />)}
+          {row('Tema', <Button key="theme" plain hotkey="t" label={`${themeName}  [t]`} onPress={nextTheme} />)}
+          {row('Vista', <Button key="compact" plain hotkey="c" label={`${look.isCompact ? 'compacta' : 'completa '}  [c]`} onPress={() => restyle($, o => ({ ...o, isCompact: !o.isCompact }))} />)}
           {SECTIONS.map((sec, i) =>
             row(look.isCompact ? sec.label : `Sección ${sec.label}`, (
-              <Button key={`section-${sec.id}`} plain hotkey={String(i + 1)} label={isShown(sec.id) ? '● visible' : '○ oculta '} onPress={() => toggleSection(sec.id)} />
+              <Button key={`section-${sec.id}`} plain hotkey={String(i + 1)} label={`${isShown(sec.id) ? '● visible' : '○ oculta '}  [${i + 1}]`} onPress={() => toggleSection(sec.id)} />
             )),
           )}
           {gap}
-          <Button key="back" plain hotkey="b" label="← volver" onPress={() => update($, view, () => 'main')} />
-          {footer}
+          <Button key="back" plain hotkey="b" label="← volver  [b]" onPress={() => update($, view, () => 'main')} />
         </Box>,
       )
     }
 
     return frame(
       <Box flexDirection="column">
+        {header}
         {isShown('task') ? (
           <Box flexDirection="column">
-            <Text bold color={pal.accent}>Tarea</Text>
-            {doing ? <Text color={pal.accent}>▶ {clip(doing.content)}</Text> : ask ? <Text dimColor>{clip(ask)}</Text> : <Text dimColor>sin tarea</Text>}
-            {list.length > 0 ? <Text dimColor>{done}/{list.length} listas</Text> : null}
-            {look.isCompact
-              ? null
-              : list.filter(t => t !== doing && t.status === 'pending').slice(0, 3).map(t => <Text dimColor>  ○ {t.content}</Text>)}
+            {heading('▶', 'Tarea', list.length > 0 ? `${done}/${list.length}` : '')}
+            {list.length === 0 ? <Text dimColor>{ask ? clip(ask) : 'Nada en curso. Cuando Claude arme un plan, aparece aquí.'}</Text> : null}
+            {list.length > 0 && look.isCompact ? <Text bold color={pal.accent}>▶ {clip((doing ?? list.find(t => t.status === 'pending') ?? list[0])?.content ?? '')}</Text> : null}
+            {list.length > 0 && !look.isCompact
+              ? list.slice(0, 6).map(t =>
+                  t.status === 'in_progress' ? <Text bold color={pal.accent}>▶ {t.content}</Text>
+                  : t.status === 'completed' ? <Text dimColor>✓ {t.content}</Text>
+                  : <Text>○ {t.content}</Text>)
+              : null}
+            {list.length > 6 && !look.isCompact ? <Text dimColor>  +{list.length - 6} más</Text> : null}
             {gap}
           </Box>
         ) : null}
 
         {isShown('cost') && s ? (
           <Box flexDirection="column">
-            <Text bold color={pal.accent}>Costo</Text>
+            {heading('$', 'Costo', look.isCompact ? '' : elapsed(now - s.startedAt))}
             <Text>
-              {money(s.usd)} <Text dimColor>sesión</Text>
-              {s.turnUsd > 0 && !look.isCompact ? <Text dimColor> · {money(s.turnUsd)} último turno</Text> : null}
-              {look.isCompact ? null : <Text dimColor> · {s.turns} prompts · {elapsed(now - s.startedAt)}</Text>}
+              <Text bold>{money(s.usd)}</Text>
+              <Text dimColor> sesión</Text>
+              {s.turnUsd > 0 && !look.isCompact ? <Text dimColor>  ·  +{money(s.turnUsd)} último turno</Text> : null}
+              {look.isCompact ? null : <Text dimColor>  ·  {s.turns} prompts</Text>}
             </Text>
             {look.isCompact && s.turnUsd > 0 ? <Text dimColor>+{money(s.turnUsd)} turno</Text> : null}
-            {p.budgetUsd > 0 ? (
-              <Text>
-                <Text dimColor>{look.isCompact ? 'pres ' : 'presupuesto '}</Text>
-                <Text color={colorFor(budgetPercent)}>{bar(budgetPercent, cells).filled}</Text>
-                <Text dimColor>{bar(budgetPercent, cells).empty}</Text> {Math.round(budgetPercent)}%
-                {look.isCompact ? null : <Text dimColor> de {money(p.budgetUsd)}</Text>}
-              </Text>
-            ) : null}
-            <Text>
-              <Text dimColor>{look.isCompact ? 'ctx ' : 'contexto '}</Text>
-              <Text color={colorFor(s.contextPercent)}>{bar(s.contextPercent, cells).filled}</Text>
-              <Text dimColor>{bar(s.contextPercent, cells).empty}</Text> {Math.round(s.contextPercent)}%
-              {look.isCompact ? null : <Text dimColor> {tokens(s.contextTokens)}/{tokens(s.window)}</Text>}
-            </Text>
-            {s.limits.map(l => (
-              <Text>
-                <Text dimColor>{l.kind === 'five_hour' ? '5h  ' : look.isCompact ? 'sem ' : 'semana '}</Text>
-                <Text color={colorFor(l.percentUsed)}>{bar(l.percentUsed, cells).filled}</Text>
-                <Text dimColor>{bar(l.percentUsed, cells).empty}</Text> {Math.round(l.percentUsed)}%
-              </Text>
-            ))}
+            {p.budgetUsd > 0 ? meter(look.isCompact ? 'pres' : 'Presup.', budgetPercent, `de ${money(p.budgetUsd)}`) : null}
+            {meter(look.isCompact ? 'ctx' : 'Contexto', s.contextPercent, `${tokens(s.contextTokens)}/${tokens(s.window)}`)}
+            {s.limits.map(l => meter(l.kind === 'five_hour' ? '5 h' : look.isCompact ? 'sem' : 'Semana', l.percentUsed))}
             {gap}
           </Box>
         ) : null}
 
         {isShown('activity') ? (
           <Box flexDirection="column">
-            <Text bold color={pal.accent}>Actividad</Text>
+            {heading('≋', 'Actividad')}
             {act.turnCosts.length > 0 ? (
               <Text>
                 <Text color={pal.accent}>{spark(act.turnCosts)}</Text>
-                <Text dimColor> costo por turno</Text>
+                <Text dimColor>  costo por turno</Text>
               </Text>
             ) : <Text dimColor>sin turnos aún</Text>}
             <Text dimColor>
@@ -671,7 +686,7 @@ export const register: Register = on => {
             </Text>
             {act.files.length > 0 ? (
               <Text dimColor wrap="truncate-end">
-                editados {act.files.length}: {act.files.slice(0, look.isCompact ? 1 : 4).join(', ')}
+                ✎ {act.files.length} editados: {act.files.slice(0, look.isCompact ? 1 : 4).join(', ')}
               </Text>
             ) : null}
             {gap}
@@ -680,15 +695,15 @@ export const register: Register = on => {
 
         {isShown('ports') ? (
           <Box flexDirection="column">
-            <Text bold color={pal.accent}>Puertos</Text>
+            {heading('⇄', 'Puertos', open.length > 0 ? `${open.length}` : '')}
             {open.length === 0 ? <Text dimColor>ninguno escuchando</Text> : null}
             {open.length > 0 ? (
               <Text>
                 {open.map(o => (
                   <Text>
                     <Text color={pal.ok}>●</Text>
-                    {look.isCompact ? o.port : <Text>:{o.port} <Text dimColor>{o.name}</Text></Text>}
-                    {'  '}
+                    {look.isCompact ? o.port : <Text> :{o.port} <Text dimColor>{o.name}</Text></Text>}
+                    {'   '}
                   </Text>
                 ))}
               </Text>
@@ -699,7 +714,7 @@ export const register: Register = on => {
 
         {isShown('git') ? (
           <Box flexDirection="column">
-            <Text bold color={pal.accent}>Git</Text>
+            {heading('⎇', 'Git', gits.length > 0 ? `${gits.length}` : '')}
             {gits.length === 0 ? <Text dimColor>sin repos aquí</Text> : null}
             {gits.map(r => {
               const isFolded = fold.includes(r.name)
@@ -708,16 +723,16 @@ export const register: Register = on => {
                   <Box flexDirection="row">
                     <Button key={`fold-${r.name}`} plain label={`${isFolded ? '▸' : '▾'} ${look.isCompact ? clip(r.name) : r.name}`} onPress={() => toggleFold(r.name)} />
                     <Text>
-                      {' '}
+                      {'  '}
                       <Text color={pal.accent}>{look.isCompact ? clip(r.branch) : r.branch}</Text>
-                      {r.changes > 0 ? <Text color={pal.warn}> ~{r.changes}</Text> : <Text dimColor> limpio</Text>}
+                      {r.changes > 0 ? <Text color={pal.warn}>  ~{r.changes}</Text> : <Text color={pal.ok}>  ✓</Text>}
                       {r.ahead > 0 ? <Text color={pal.ok}> ↑{r.ahead}</Text> : null}
                       {r.behind > 0 ? <Text color={pal.bad}> ↓{r.behind}</Text> : null}
                     </Text>
                   </Box>
-                  {isFolded || look.isCompact ? null : r.last ? <Text dimColor wrap="truncate-end">  {r.last}</Text> : null}
-                  {isFolded || look.isCompact ? null : r.files.slice(0, room).map(f => <Text dimColor wrap="truncate-start">  · {f}</Text>)}
-                  {isFolded || look.isCompact || r.files.length <= room ? null : <Text dimColor>  · +{r.files.length - room} más</Text>}
+                  {isFolded || look.isCompact ? null : r.last ? <Text dimColor wrap="truncate-end">  └ {r.last}</Text> : null}
+                  {isFolded || look.isCompact ? null : r.files.slice(0, room).map(f => <Text dimColor wrap="truncate-start">    · {f}</Text>)}
+                  {isFolded || look.isCompact || r.files.length <= room ? null : <Text dimColor>    · +{r.files.length - room} más</Text>}
                 </Box>
               )
             })}
@@ -726,36 +741,35 @@ export const register: Register = on => {
         ) : null}
 
         {/* Fixed-width labels, so a press never shifts its neighbours. */}
+        {heading('☰', 'Opciones', look.isCompact || !when ? '' : `actualizado ${when}`)}
         <Box flexDirection="row">
-          <Button key="options" plain label={`${isOptionsFolded ? '▸' : '▾'} Opciones`} onPress={() => toggleFold(OPTIONS_KEY)} />
-          {look.isCompact || !when ? null : <Text dimColor>  actualizado {when}</Text>}
+          <Button key="options" plain label={isOptionsFolded ? '▸ mostrar' : '▾ ocultar'} onPress={() => toggleFold(OPTIONS_KEY)} />
         </Box>
         {isOptionsFolded ? null : (
           <Box flexDirection="column">
             <Box flexDirection="row" flexWrap="wrap">
-              <Button key="refresh" plain hotkey="r" label={look.isCompact ? '↻' : 'actualizar'} onPress={() => refreshWorld($)} />
-              <Text>{look.isCompact ? ' ' : '  '}</Text>
-              <Button key="theme" plain hotkey="t" label={look.isCompact ? '◐' : `tema ${themeName}`} onPress={nextTheme} />
-              <Text>{look.isCompact ? ' ' : '  '}</Text>
-              <Button key="compact" plain hotkey="c" label={look.isCompact ? '▢' : 'compacto'} onPress={() => restyle($, o => ({ ...o, isCompact: !o.isCompact }))} />
-              <Text>{look.isCompact ? ' ' : '  '}</Text>
-              <Button key="settings" plain hotkey="s" label={look.isCompact ? '⚙' : '⚙ ajustes'} onPress={() => update($, view, () => 'settings')} />
+              <Button key="refresh" plain hotkey="r" label={look.isCompact ? '↻' : '↻ actualizar [r]'} onPress={() => refreshWorld($)} />
+              <Text>{look.isCompact ? ' ' : '   '}</Text>
+              <Button key="theme" plain hotkey="t" label={look.isCompact ? '◐' : `◐ tema ${themeName}[t]`} onPress={nextTheme} />
+              <Text>{look.isCompact ? ' ' : '   '}</Text>
+              <Button key="compact" plain hotkey="c" label={look.isCompact ? '▢' : '▢ compacto [c]'} onPress={() => restyle($, o => ({ ...o, isCompact: !o.isCompact }))} />
+              <Text>{look.isCompact ? ' ' : '   '}</Text>
+              <Button key="settings" plain hotkey="s" label={look.isCompact ? '⚙' : '⚙ ajustes [s]'} onPress={() => update($, view, () => 'settings')} />
             </Box>
             <Box flexDirection="row" flexWrap="wrap">
               {SECTIONS.flatMap((sec, i) => [
-                i > 0 ? <Text key={`gap-${sec.id}`}>{look.isCompact ? ' ' : '  '}</Text> : null,
+                i > 0 ? <Text key={`gap-${sec.id}`}>{look.isCompact ? ' ' : '   '}</Text> : null,
                 <Button
                   key={`section-${sec.id}`}
                   plain
                   hotkey={String(i + 1)}
-                  label={look.isCompact ? control(isShown(sec.id)) : `${control(isShown(sec.id))} ${sec.label}`}
+                  label={look.isCompact ? control(isShown(sec.id)) : `${control(isShown(sec.id))} ${sec.label} [${i + 1}]`}
                   onPress={() => toggleSection(sec.id)}
                 />,
               ])}
             </Box>
           </Box>
         )}
-        {footer}
       </Box>,
     )
   })
