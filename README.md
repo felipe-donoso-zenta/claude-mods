@@ -4,7 +4,7 @@ Mods privados para Claude Code: una **línea de estado** y un **panel de desarro
 
 | Mod | Qué hace | Versión |
 | --- | --- | --- |
-| [`statusline`](#statusline) | Banda sobre el prompt: modelo y esfuerzo, rama git, cuenta de GitHub y contexto usado | 0.2.2 |
+| [`statusline`](#statusline) | Banda sobre el prompt: modelo y esfuerzo, rama git, cuenta de GitHub y contexto usado | 0.2.3 |
 | [`dev-panel`](#dev-panel) | Panel lateral: tarea, costo y límites, actividad, puertos y git de todos tus repos | 0.6.2 |
 
 Se instalan juntos y **no repiten datos**:
@@ -57,7 +57,7 @@ Una sola línea, con colores, justo encima del prompt:
 | Segmento | Qué muestra | Se refresca |
 | --- | --- | --- |
 | `✺` y modelo | Glifo que rota entre `✻ ✽ ✺ ✹` y el nombre corto del modelo | 1 s |
-| `· esfuerzo` | Esfuerzo de razonamiento que realmente usa la petición (`high`, `max`…) | por turno |
+| `· esfuerzo` | Esfuerzo de razonamiento junto al modelo (`medium`, `high`, `max`…). Desde el inicio sale el que configuraste; tras cada turno, el que realmente usó la petición | 5 s y por turno |
 | `⎇ rama` | Solo dentro de un repo. `✓` sin cambios o `●N` archivos modificados; `↑N` (verde) commits por subir, `↓N` (rojo) por bajar | 5 s |
 | `◉ cuenta` | Cuenta activa de `gh`: con cuál harás commit o push | 15 s |
 | `▰▱ %` | Contexto usado, en 10 celdas. Verde hasta 60 %, amarillo desde 60 %, rojo desde 80 % (conviene `/compact`) | 1 s |
@@ -123,6 +123,17 @@ claude plugin update dev-panel@claude-mods
 ```
 
 Luego `/reload-plugins` o una sesión nueva. El aviso solo avisa: no actualiza solo.
+
+## Ramas
+
+- `main`: lo que se instala. Cada commit aquí llega a todos los usuarios, así que solo entra código probado y con la versión subida.
+- `dev`: trabajo en curso. Desarrolla y prueba aquí; cuando esté listo, se mezcla a `main` junto con la subida de versión.
+
+```
+git switch dev
+# ...cambios y commits...
+git switch main && git merge dev && git push
+```
 
 ## Publicar una versión (mantenedor)
 

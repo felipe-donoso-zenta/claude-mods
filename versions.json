@@ -5,8 +5,8 @@
     "notes": "parche de seguridad: no ejecuta programas plantados en repos clonados"
   },
   "statusline": {
-    "latest": "0.2.2",
+    "latest": "0.2.3",
     "minSafe": "0.2.2",
-    "notes": "parche de seguridad: no ejecuta programas plantados en repos clonados"
+    "notes": "muestra el esfuerzo junto al modelo desde el inicio"
   }
 }

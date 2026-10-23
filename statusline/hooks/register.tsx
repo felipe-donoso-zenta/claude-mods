@@ -99,10 +99,30 @@ ${stderr}`.split(/(?=✓ Logged in|X Failed)/).find(b => /Active account: true/.
   }
 }
 
+// The effort the person set, for the stretch before a turn tells the real one: the /config row first, then the per-model setting in settings.json.
+async function readEffort($: EngineInterface, model: string) {
+  const level = (v: unknown) => (typeof v === 'string' && /^[a-z]{2,8}$/.test(v) ? v : '')
+  try {
+    const row = (await $.config.list()).find(r => /effort/i.test(r.key))
+    if (row && level(row.value)) return level(row.value)
+  } catch {
+    // no such row: read the file
+  }
+  try {
+    const home = $.plugin.root.split(/[\\/]\.claude[\\/]/)[0]
+    const settings = JSON.parse(await $.fs.read(`${home}/.claude/settings.json`))
+    return level(settings.modelSettings?.[model]?.effortLevel) || level(settings.effortLevel)
+  } catch {
+    return ''
+  }
+}
+
 export const register: Register = on => {
   let isStarted = false
   let liveModel = ''
   let liveEffort = ''
+  let configEffort = ''
+  let sessionModel = ''
 
   on('session.start', async ($, e, next) => {
     const started = await next(e)
@@ -112,10 +132,18 @@ export const register: Register = on => {
       const patch = (p: Partial<Snapshot>) => update($, snapshot, s => ({ ...s, ...p }))
       const tick = async () => {
         const usage = await $.session.usage().catch(() => undefined)
+        const current = await $.session.model().catch(() => '')
+        // /model switched it: what the last turn used no longer holds.
+        if (current !== sessionModel) {
+          sessionModel = current
+          liveModel = ''
+          liveEffort = ''
+          configEffort = await readEffort($, current)
+        }
         void patch({
           frame: Math.floor(Date.now() / 1000) % FRAMES.length,
-          model: liveModel || shortModel(await $.session.model().catch(() => '')),
-          effort: liveEffort,
+          model: liveModel || shortModel(current),
+          effort: liveEffort || configEffort,
           percent: usage?.context.percent ?? null,
         })
       }
@@ -124,7 +152,15 @@ export const register: Register = on => {
       void readGit($).then(patch)
       void checkUpdate($).then(update => patch({ update }))
       $.clock.every(FRAME_MS, () => { void tick() })
-      $.clock.every(GIT_MS, () => { void readGit($).then(patch) })
+      $.clock.every(GIT_MS, () => {
+        void readGit($).then(patch)
+        // /effort changes it without a model switch.
+        void readEffort($, sessionModel).then(effort => {
+          if (effort === configEffort) return
+          configEffort = effort
+          liveEffort = ''
+        })
+      })
       $.clock.every(ACCOUNT_MS, () => { void readAccount($).then(account => patch({ account })) })
       $.clock.every(CHECK_MS, () => { void checkUpdate($).then(update => patch({ update })) })
     }
