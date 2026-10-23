@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, RenderNode } from 'claude-code'
 
-import type { Activity, Live, Port, Prefs, Repo, Section, Stats, Style, Todo } from '../types'
+import type { Activity, Live, Port, Prefs, Repo, Section, Stats, Style, Todo, Version } from '../types'
 
 const PANE = 'dev-panel'
 
@@ -81,6 +81,7 @@ const view = atom({ plugin: 'dev-panel', key: 'view' } as const, 'main', { shape
 // Not a valid repo name (it holds a space), so it can share the list with them.
 const OPTIONS_KEY = 'opciones panel'
 // Names of the repos whose detail is folded away, plus the options block.
+const version = atom({ plugin: 'dev-panel', key: 'version' } as const, null as Version | null, { shape: 'version-1' })
 const folded = atom({ plugin: 'dev-panel', key: 'folded' } as const, [] as string[], { shape: 'folded-1' })
 
 // accent: headings and the live item; ok / warn / bad: the bars and dots by how full or healthy.
@@ -382,6 +383,7 @@ export const register: Register = on => {
       const check = async () => {
         const before = status && versionLine(status)
         status = await checkUpdate($)
+        await update($, version, () => status ?? null)
         if (versionLine(status) !== before) announce($, status)
       }
       void check()
@@ -520,6 +522,7 @@ export const register: Register = on => {
     const screen = await read($, view)
     const act = await read($, activity)
     const fold = await read($, folded)
+    const ver = await read($, version)
     const now = await $.clock.now()
     const isOptionsFolded = fold.includes(OPTIONS_KEY)
     const toggleFold = (name: string) => update($, folded, f => (f.includes(name) ? f.filter(n => n !== name) : [...f, name]))
@@ -573,6 +576,20 @@ export const register: Register = on => {
       )
     }
 
+    const level = !ver ? 'unknown' : ver.minSafe && cmp(ver.current, ver.minSafe) < 0 ? 'urgent' : ver.latest && cmp(ver.current, ver.latest) < 0 ? 'old' : 'ok'
+    // Always the last lines of the pane: which version runs, and whether it needs patching.
+    const versionFooter = (
+      <Box flexDirection="column">
+        <Text dimColor>{'─'.repeat(ruleWidth)}</Text>
+        {level === 'unknown' || !ver ? <Text dimColor>{look.isCompact ? 'versión ?' : 'dev-panel · versión sin verificar'}</Text> : null}
+        {level === 'ok' && ver ? <Text><Text dimColor>{look.isCompact ? '' : 'dev-panel '}v{ver.current} </Text><Text color={pal.ok}>✓ al día</Text></Text> : null}
+        {level === 'old' && ver ? <Text color={pal.warn}>↑ v{ver.current} → v{ver.latest}{look.isCompact ? '' : ' disponible'}</Text> : null}
+        {level === 'urgent' && ver ? <Text bold color={pal.bad}>⚠ v{ver.current} {look.isCompact ? 'insegura' : 'desactualizada: parchea bugs y vulnerabilidades'}</Text> : null}
+        {(level === 'old' || level === 'urgent') && ver && !look.isCompact ? <Text dimColor>claude plugin update {ver.name}@{MARKETPLACE}</Text> : null}
+        {level === 'urgent' && ver?.notes && !look.isCompact ? <Text dimColor wrap="truncate-end">{ver.notes}</Text> : null}
+      </Box>
+    )
+
     if (screen === 'settings') {
       const row = (label: string, button: RenderNode) => (
         <Box flexDirection="row">
@@ -615,12 +632,15 @@ export const register: Register = on => {
           )}
           {gap}
           <Button key="back" plain hotkey="b" label="volver" onPress={() => update($, view, () => 'main')} />
+          {gap}
+          {versionFooter}
         </Box>,
       )
     }
 
     return frame(
-      <Box flexDirection="column">
+      <Box flexDirection="column" flexGrow={1} minHeight={e.viewport?.rows}>
+      <Box flexDirection="column" flexGrow={1}>
         {isShown('task') ? (
           <Box flexDirection="column">
             {heading('▶', 'Tarea', list.length > 0 ? `${done}/${list.length}` : '')}
@@ -723,6 +743,8 @@ export const register: Register = on => {
           </Box>
         ) : null}
 
+      </Box>
+        {/* Pinned to the bottom of the pane: the content above takes whatever room is left. */}
         {heading('☰', 'Opciones', look.isCompact || !when ? '' : `act. ${when}`)}
         <Button key="options" plain label={isOptionsFolded ? '▸ mostrar' : '▾ ocultar'} onPress={() => toggleFold(OPTIONS_KEY)} />
         {isOptionsFolded ? null : look.isCompact ? (
@@ -762,6 +784,8 @@ export const register: Register = on => {
             ))}
           </Box>
         )}
+        {gap}
+        {versionFooter}
       </Box>,
     )
   })

@@ -1,8 +1,8 @@
 {
   "dev-panel": {
-    "latest": "0.4.0",
+    "latest": "0.5.0",
     "minSafe": "0.2.0",
-    "notes": "ya no repite modelo ni contexto: eso vive en statusline"
+    "notes": "opciones abajo y version visible en el panel"
   },
   "statusline": {
     "latest": "0.2.0",

@@ -4,7 +4,7 @@ Repo privado con mods de Claude Code: https://github.com/felipe-donoso-zenta/cla
 
 | Mod | Que hace | Version |
 | --- | --- | --- |
-| `dev-panel` | Panel de desarrollo: tarea, costo y contexto, limites, git de los repos y puertos | 0.4.0 |
+| `dev-panel` | Panel de desarrollo: tarea, costo y contexto, limites, git de los repos y puertos | 0.5.0 |
 | `statusline` | Banda sobre el prompt: modelo y esfuerzo, rama git, cuenta de GitHub y contexto usado | 0.2.0 |
 
 Se instalan juntos y no repiten datos:
@@ -64,7 +64,7 @@ Notas:
 
 ## 4. Saber en que version estas
 
-- `dev-panel`: escribe `/panel version`.
+- `dev-panel`: la ultima linea del panel muestra la version y si esta al dia; tambien `/panel version`.
 - En cualquier caso: `claude plugin list`.
 
 ## 5. Avisos de actualizacion
