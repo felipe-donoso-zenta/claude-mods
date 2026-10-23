@@ -375,6 +375,7 @@ export const register: Register = on => {
     await update($, live, () => ({ model: '', effort: '' }))
     await update($, view, () => 'main')
     await update($, activity, () => EMPTY_ACTIVITY)
+    await update($, folded, () => [OPTIONS_KEY])
     fired.clear()
     if (!isStarted) {
       isStarted = true
@@ -590,6 +591,17 @@ export const register: Register = on => {
       </Box>
     )
 
+    // A patch due goes first, where no scrolling is needed to see it.
+    const banner = (level === 'old' || level === 'urgent') && ver ? (
+      <Box flexDirection="column">
+        <Text bold color={level === 'urgent' ? pal.bad : pal.warn}>
+          {level === 'urgent' ? '⚠ ' : '↑ '}{look.isCompact ? `v${ver.latest ?? '?'} nueva` : level === 'urgent' ? `Actualiza: v${ver.current} tiene vulnerabilidades` : `Hay v${ver.latest}: actualiza`}
+        </Text>
+        {look.isCompact ? null : <Text dimColor>claude plugin update {ver.name}@{MARKETPLACE}</Text>}
+        {gap}
+      </Box>
+    ) : null
+
     if (screen === 'settings') {
       const row = (label: string, button: RenderNode) => (
         <Box flexDirection="row">
@@ -599,6 +611,7 @@ export const register: Register = on => {
       )
       return frame(
         <Box flexDirection="column">
+          {banner}
           {heading('✦', 'Ajustes')}
           {gap}
           <Text bold>Avisos</Text>
@@ -639,8 +652,9 @@ export const register: Register = on => {
     }
 
     return frame(
-      <Box flexDirection="column" flexGrow={1} minHeight={e.viewport?.rows}>
-      <Box flexDirection="column" flexGrow={1}>
+      <Box flexDirection="column">
+      <Box flexDirection="column">
+        {banner}
         {isShown('task') ? (
           <Box flexDirection="column">
             {heading('▶', 'Tarea', list.length > 0 ? `${done}/${list.length}` : '')}
@@ -744,9 +758,9 @@ export const register: Register = on => {
         ) : null}
 
       </Box>
-        {/* Pinned to the bottom of the pane: the content above takes whatever room is left. */}
+        {/* Right under the content, never pushed below the fold by a forced height. */}
         {heading('☰', 'Opciones', look.isCompact || !when ? '' : `act. ${when}`)}
-        <Button key="options" plain label={isOptionsFolded ? '▸ mostrar' : '▾ ocultar'} onPress={() => toggleFold(OPTIONS_KEY)} />
+        <Button key="options" plain label={isOptionsFolded ? '▸ mostrar opciones' : '▾ ocultar opciones'} onPress={() => toggleFold(OPTIONS_KEY)} />
         {isOptionsFolded ? null : look.isCompact ? (
           <Box flexDirection="row" flexWrap="wrap">
             <Button key="refresh" plain hotkey="r" label="↻" onPress={() => refreshWorld($)} />

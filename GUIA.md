@@ -4,7 +4,7 @@ Repo privado con mods de Claude Code: https://github.com/felipe-donoso-zenta/cla
 
 | Mod | Que hace | Version |
 | --- | --- | --- |
-| `dev-panel` | Panel de desarrollo: tarea, costo y contexto, limites, git de los repos y puertos | 0.5.0 |
+| `dev-panel` | Panel de desarrollo: tarea, costo y contexto, limites, git de los repos y puertos | 0.5.1 |
 | `statusline` | Banda sobre el prompt: modelo y esfuerzo, rama git, cuenta de GitHub y contexto usado | 0.2.0 |
 
 Se instalan juntos y no repiten datos:
