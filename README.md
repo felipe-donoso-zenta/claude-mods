@@ -4,7 +4,7 @@ Mods privados para Claude Code: una **línea de estado** y un **panel de desarro
 
 | Mod | Qué hace | Versión |
 | --- | --- | --- |
-| [`statusline`](#statusline) | Banda sobre el prompt: modelo y esfuerzo, rama git, cuenta de GitHub y contexto usado | 0.2.3 |
+| [`statusline`](#statusline) | Banda bajo el prompt: modelo y esfuerzo, rama git, cuenta de GitHub y contexto usado | 0.2.4 |
 | [`dev-panel`](#dev-panel) | Panel lateral: tarea, costo y límites, actividad, puertos y git de todos tus repos | 0.6.2 |
 | [`mods`](#el-skill-mods) | Skill `/mods`: instala, actualiza y revisa los otros mods por ti | 0.1.0 |
 
@@ -61,15 +61,15 @@ Desde ahí, en cualquier sesión di lo que quieras con tus palabras o usa el com
 
 | Pides | Qué hace |
 | --- | --- |
-| `/mods` o «qué versión tengo» | Estado: versión instalada, última publicada y si alguno está desactualizado o es urgente (⚠) |
-| `/mods instalar` | Agrega el marketplace si falta e instala `statusline` y `dev-panel`; avisa si verás dos barras |
-| `/mods actualizar` | Trae las versiones nuevas y actualiza lo atrasado, los urgentes primero |
+| `/mods:mods` o «qué versión tengo» | Estado: versión instalada, última publicada y si alguno está desactualizado o es urgente (⚠) |
+| `/mods:mods instalar` | Agrega el marketplace si falta e instala `statusline` y `dev-panel`; avisa si verás dos barras |
+| `/mods:mods actualizar` | Trae las versiones nuevas y actualiza lo atrasado, los urgentes primero |
 
-Comprueba antes tu sesión de `gh` y el acceso al repo, usa solo los comandos de este README y no edita tu `settings.json` sin preguntar. Si alguna vez no aparece como comando, pídelo en lenguaje natural: «instala los mods de claude-mods».
+Comprueba antes tu sesión de `gh` y el acceso al repo, usa solo los comandos de este README y no edita tu `settings.json` sin preguntar. El comando se llama `/mods:mods` (Claude Code antepone el nombre del plugin). Si no lo recuerdas, pídelo en lenguaje natural: «instala los mods de claude-mods».
 
 ## statusline
 
-Una sola línea, con colores, justo encima del prompt:
+Una sola línea, con colores, justo debajo del prompt, bajo la línea de ayuda:
 
 ```
 ✺ sonnet-5-5 · high  │  ⎇ main ●3 ↑1  │  ◉ felipe-donoso-zenta  │  ▰▰▱▱▱▱▱▱▱▱ 9%
@@ -85,7 +85,6 @@ Una sola línea, con colores, justo encima del prompt:
 | `↑ vX` / `⚠ vX desactualizado` | **Solo si el mod está atrás.** Hay versión nueva, o la tuya tiene bugs o vulnerabilidades. También sale un toast | al iniciar y cada hora |
 
 - No tiene comandos ni opciones.
-- Se oculta mientras Claude muestra una encuesta.
 - Para ver su versión cuando está al día: `claude plugin list`.
 
 ## dev-panel

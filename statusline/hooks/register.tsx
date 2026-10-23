@@ -177,9 +177,9 @@ export const register: Register = on => {
     return yield* next(e)
   })
 
-  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+  // Under the prompt, below the engine's own hint line, where a status line sits.
+  on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
     const beneath = await next(e)
-    if (e.props.hasSurvey) return beneath
     const s = await read($, snapshot)
     if (s.model === '') return beneath
 

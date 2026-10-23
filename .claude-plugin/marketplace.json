@@ -12,7 +12,7 @@
     {
       "name": "statusline",
       "source": "./statusline",
-      "description": "Banda sobre el prompt: modelo, rama git, cuenta de GitHub y contexto usado."
+      "description": "Banda bajo el prompt: modelo, rama git, cuenta de GitHub y contexto usado."
     },
     {
       "name": "mods",
