@@ -1,12 +1,12 @@
 {
   "dev-panel": {
-    "latest": "0.6.1",
-    "minSafe": "0.6.1",
-    "notes": "corrige tareas y archivos editados que no se mostraban; endurece el chequeo de versiones"
+    "latest": "0.6.2",
+    "minSafe": "0.6.2",
+    "notes": "parche de seguridad: no ejecuta programas plantados en repos clonados"
   },
   "statusline": {
-    "latest": "0.2.1",
-    "minSafe": "0.2.1",
-    "notes": "endurece el chequeo de versiones y reduce procesos"
+    "latest": "0.2.2",
+    "minSafe": "0.2.2",
+    "notes": "parche de seguridad: no ejecuta programas plantados en repos clonados"
   }
 }

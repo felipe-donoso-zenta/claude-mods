@@ -9,7 +9,9 @@ const CHECK_MS = 60 * 60 * 1000
 const FRAMES = ['✻', '✽', '✺', '✹', '✺', '✽']
 const REPO = 'felipe-donoso-zenta/claude-mods'
 const MARKETPLACE = 'claude-mods'
-const GIT = ['git', '--no-optional-locks', '-c', 'core.fsmonitor=false']
+// Windows looks in the folder a program starts from before it looks in PATH: a git.exe or gh.cmd planted in a cloned repo would run.
+// Every call starts from the mod's own folder instead, and git is pointed at the repo with -C.
+const GIT = ['git', '--no-optional-locks', '-c', 'core.fsmonitor=false', '-c', 'log.showSignature=false']
 
 const C = { spark: '#d7875f', model: '#ffaf5f', branch: '#5fafff', account: '#af87ff', ok: '#5faf5f', warn: '#d7af5f', bad: '#d75f5f' }
 
@@ -33,7 +35,7 @@ async function checkUpdate($: EngineInterface): Promise<string> {
     const current: string = JSON.parse(await $.fs.read(`${$.plugin.root}/.claude-plugin/plugin.json`)).version ?? '0.0.0'
     const { stdout } = await $.process.run(
       ['gh', 'api', '-H', 'Accept: application/vnd.github.raw', `repos/${REPO}/contents/versions.json`],
-      { timeoutMs: 10000 },
+      { cwd: $.plugin.root, timeoutMs: 10000 },
     )
     const raw = JSON.parse(stdout)[name]
     // versions.json is text from the network: only a plain version and a short line without control characters get through.
@@ -58,7 +60,8 @@ async function checkUpdate($: EngineInterface): Promise<string> {
 async function readGit($: EngineInterface) {
   const none = { branch: '', dirty: 0, ahead: 0, behind: 0 }
   try {
-    const { stdout } = await $.process.run([...GIT, 'status', '--porcelain=v1', '-b'], { timeoutMs: 2000 })
+    const dir = await $.session.cwd()
+    const { stdout } = await $.process.run([...GIT, '-C', dir, 'status', '--porcelain=v1', '-b'], { cwd: $.plugin.root, timeoutMs: 2000 })
     const [head = '', ...rest] = stdout.split('\n')
     if (!head.startsWith('## ')) return none
     return {
@@ -75,7 +78,7 @@ async function readGit($: EngineInterface) {
 // The active account is in gh's hosts file: reading it costs nothing, where `gh auth status` calls GitHub each time.
 let lastGh = 0
 async function readAccount($: EngineInterface) {
-  const home = $.plugin.root.split(/[\/]\.claude[\/]/)[0]
+  const home = $.plugin.root.split(/[\\/]\.claude[\\/]/)[0]
   for (const file of [`${home}/AppData/Roaming/GitHub CLI/hosts.yml`, `${home}/.config/gh/hosts.yml`]) {
     try {
       const login = (await $.fs.read(file)).match(/^\s{4}user:\s*(\S+)/m)?.[1]
@@ -87,7 +90,7 @@ async function readAccount($: EngineInterface) {
   if (Date.now() - lastGh < 5 * 60 * 1000) return ''
   lastGh = Date.now()
   try {
-    const { stdout, stderr } = await $.process.run(['gh', 'auth', 'status'], { timeoutMs: 5000 })
+    const { stdout, stderr } = await $.process.run(['gh', 'auth', 'status'], { cwd: $.plugin.root, timeoutMs: 5000 })
     const active = `${stdout}
 ${stderr}`.split(/(?=✓ Logged in|X Failed)/).find(b => /Active account: true/.test(b))
     return active?.match(/account (\S+)/)?.[1] ?? ''

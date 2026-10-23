@@ -31,7 +31,7 @@ async function checkUpdate($: EngineInterface): Promise<Status> {
   try {
     const { stdout } = await $.process.run(
       ['gh', 'api', '-H', 'Accept: application/vnd.github.raw', `repos/${REPO}/contents/versions.json`],
-      { timeoutMs: 10000 },
+      { cwd: $.plugin.root, timeoutMs: 10000 },
     )
     const raw = JSON.parse(stdout)[name]
     // versions.json is text from the network: only a plain version and a short line without control characters get through.
@@ -63,8 +63,10 @@ const MAX_FILES = 5
 const MAX_PORTS = 8
 const COMPACT_WIDTH = 24
 const MAX_REPOS = 8
-// No optional locks: reading status must never block the person's own git.
-const GIT = ['git', '--no-optional-locks', '-c', 'core.fsmonitor=false']
+// Windows looks in the folder a program starts from before it looks in PATH: a git.exe or gh.cmd planted in a cloned repo would run.
+// Every call starts from the mod's own folder instead, and git is pointed at the repo with -C.
+// No optional locks: reading status must never block the person's own git. No signature check: a repo's own config can name the program that does it.
+const GIT = ['git', '--no-optional-locks', '-c', 'core.fsmonitor=false', '-c', 'log.showSignature=false']
 const DEV_PROCESSES = /^(node|bun|deno|java|python|pythonw|dotnet|php|ruby|go|docker|com\.docker.*|wslrelay|vite|ng|firebase|caddy|nginx)$/i
 // Absolute, so a powershell.exe dropped in a project folder is never the one that runs.
 const POWERSHELL = 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe'
@@ -245,10 +247,10 @@ async function scanWorld ($: EngineInterface) {
     for (const root of roots) {
       try {
         // A repo's own config can name a program for git to run (core.fsmonitor): off, since these may be repos nobody has read.
-        const status = await $.process.run([...GIT, 'status', '--porcelain=v1', '-b'], { cwd: root, timeoutMs: 5000 })
+        const status = await $.process.run([...GIT, '-C', root, 'status', '--porcelain=v1', '-b'], { cwd: $.plugin.root, timeoutMs: 5000 })
         const [head = '', ...rest] = status.stdout.split('\n')
         const files = rest.filter(Boolean).map(line => clean(line.slice(3)))
-        const log = await $.process.run([...GIT, 'log', '-1', '--format=%h %s'], { cwd: root, timeoutMs: 5000 }).catch(() => undefined)
+        const log = await $.process.run([...GIT, '-C', root, 'log', '-1', '--no-show-signature', '--format=%h %s'], { cwd: $.plugin.root, timeoutMs: 5000 }).catch(() => undefined)
         found.push({
           name: clean(base(root)),
           branch: clean(head.replace(/^## /, '').split('...')[0] ?? ''),
@@ -268,7 +270,7 @@ async function scanWorld ($: EngineInterface) {
   }
 
   if (isPortPass) try {
-    const { stdout } = await $.process.run([POWERSHELL, '-NoProfile', '-Command', WIN_PORTS], { timeoutMs: 8000 })
+    const { stdout } = await $.process.run([POWERSHELL, '-NoProfile', '-Command', WIN_PORTS], { cwd: $.plugin.root, timeoutMs: 8000 })
     const seen = new Map<number, string>()
     for (const line of stdout.split(/\r?\n/)) {
       const [port, name] = line.trim().split(/\s+/)
@@ -357,7 +359,7 @@ async function play ($: EngineInterface, tune: keyof typeof TUNES) {
   if (!(await read($, prefs)).isSoundOn) return
   const beeps = TUNES[tune].map(([hz, ms]) => `[console]::Beep(${hz},${ms})`).join(';')
   try {
-    await $.process.run([POWERSHELL, '-NoProfile', '-Command', beeps], { timeoutMs: 4000 })
+    await $.process.run([POWERSHELL, '-NoProfile', '-Command', beeps], { cwd: $.plugin.root, timeoutMs: 4000 })
   } catch {
     // no sound is fine
   }

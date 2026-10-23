@@ -4,8 +4,8 @@ Repo privado con mods de Claude Code: https://github.com/felipe-donoso-zenta/cla
 
 | Mod | Que hace | Version |
 | --- | --- | --- |
-| `dev-panel` | Panel de desarrollo: tarea, costo y contexto, limites, git de los repos y puertos | 0.6.1 |
-| `statusline` | Banda sobre el prompt: modelo y esfuerzo, rama git, cuenta de GitHub y contexto usado | 0.2.1 |
+| `dev-panel` | Panel de desarrollo: tarea, costo y contexto, limites, git de los repos y puertos | 0.6.2 |
+| `statusline` | Banda sobre el prompt: modelo y esfuerzo, rama git, cuenta de GitHub y contexto usado | 0.2.2 |
 
 Se instalan juntos y no repiten datos:
 
@@ -125,3 +125,15 @@ claude-mods/
 - **No aparece el aviso**: revisa `gh auth status` y que la cuenta tenga acceso al repo.
 - **`marketplace add` falla**: la cuenta activa de `gh` no es la que tiene acceso; cambia con `gh auth switch`.
 - **Sigue la version vieja tras actualizar**: ejecuta `/reload-plugins` o reinicia la sesion.
+
+## 10. Seguridad
+
+Lo que los mods hacen y lo que no:
+
+- Ejecutan solo `git`, `gh` y PowerShell (puertos y sonido), siempre como lista de argumentos, sin shell, y desde la carpeta del propio mod: asi un `git.exe` o `gh.cmd` plantado en un repo clonado nunca se ejecuta.
+- `git` corre con `--no-optional-locks`, `core.fsmonitor=false` y `log.showSignature=false`, para que la configuracion de un repo ajeno no ejecute programas ni bloquee tu git.
+- Todo texto que viene de repos, prompts o de `versions.json` se limpia de caracteres de control antes de dibujarse; `versions.json` solo aporta versiones `x.y.z` y una nota de 120 caracteres.
+- No hacen peticiones de red propias: el unico acceso es `gh api` al repo, con tu propia sesion de GitHub.
+- No guardan ni envian credenciales. `statusline` lee el archivo de `gh` solo para sacar el nombre de la cuenta.
+
+Riesgo que queda: quien pueda hacer push a `main` controla el codigo que se instala. Activa 2FA en la cuenta, protege `main` y limita quien tiene acceso de escritura.
