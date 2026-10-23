@@ -8,5 +8,10 @@
     "latest": "0.2.3",
     "minSafe": "0.2.2",
     "notes": "muestra el esfuerzo junto al modelo desde el inicio"
+  },
+  "mods": {
+    "latest": "0.1.0",
+    "minSafe": "0.1.0",
+    "notes": "primera version"
   }
 }

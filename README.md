@@ -6,6 +6,7 @@ Mods privados para Claude Code: una **línea de estado** y un **panel de desarro
 | --- | --- | --- |
 | [`statusline`](#statusline) | Banda sobre el prompt: modelo y esfuerzo, rama git, cuenta de GitHub y contexto usado | 0.2.3 |
 | [`dev-panel`](#dev-panel) | Panel lateral: tarea, costo y límites, actividad, puertos y git de todos tus repos | 0.6.2 |
+| [`mods`](#el-skill-mods) | Skill `/mods`: instala, actualiza y revisa los otros mods por ti | 0.1.0 |
 
 Se instalan juntos y **no repiten datos**:
 
@@ -16,7 +17,7 @@ Se instalan juntos y **no repiten datos**:
 
 ## Contenido
 
-[Instalar](#instalar) · [statusline](#statusline) · [dev-panel](#dev-panel) · [Versiones y avisos](#versiones-y-avisos) · [Actualizar](#actualizar) · [Publicar una versión](#publicar-una-versión-mantenedor) · [Seguridad](#seguridad) · [Estructura](#estructura-del-repo) · [Problemas comunes](#problemas-comunes)
+[Instalar](#instalar) · [Skill /mods](#el-skill-mods) · [statusline](#statusline) · [dev-panel](#dev-panel) · [Versiones y avisos](#versiones-y-avisos) · [Actualizar](#actualizar) · [Publicar una versión](#publicar-una-versión-mantenedor) · [Seguridad](#seguridad) · [Estructura](#estructura-del-repo) · [Problemas comunes](#problemas-comunes)
 
 ## Instalar
 
@@ -45,6 +46,26 @@ claude plugin install dev-panel@claude-mods
 Luego `/reload-plugins` o abre una sesión nueva.
 
 > Si ya tenías una `statusLine` en `settings.json`, verás dos barras. Quita ese bloque para dejar solo el mod.
+
+## El skill /mods
+
+Después de la primera instalación no necesitas recordar comandos: el skill `mods` instala, actualiza y revisa los demás por ti.
+
+```
+/plugin marketplace add felipe-donoso-zenta/claude-mods
+/plugin install mods@claude-mods
+/reload-plugins
+```
+
+Desde ahí, en cualquier sesión di lo que quieras con tus palabras o usa el comando:
+
+| Pides | Qué hace |
+| --- | --- |
+| `/mods` o «qué versión tengo» | Estado: versión instalada, última publicada y si alguno está desactualizado o es urgente (⚠) |
+| `/mods instalar` | Agrega el marketplace si falta e instala `statusline` y `dev-panel`; avisa si verás dos barras |
+| `/mods actualizar` | Trae las versiones nuevas y actualiza lo atrasado, los urgentes primero |
+
+Comprueba antes tu sesión de `gh` y el acceso al repo, usa solo los comandos de este README y no edita tu `settings.json` sin preguntar. Si alguna vez no aparece como comando, pídelo en lenguaje natural: «instala los mods de claude-mods».
 
 ## statusline
 
@@ -180,6 +201,9 @@ Quien tenga una versión por debajo de `minSafe` verá el aviso urgente en menos
 claude-mods/
 ├── .claude-plugin/marketplace.json    # lista los mods para /plugin install
 ├── versions.json                      # latest y minSafe por mod
+├── mods/
+│   ├── .claude-plugin/plugin.json
+│   └── skills/mods/SKILL.md           # el skill /mods
 ├── statusline/
 │   ├── .claude-plugin/plugin.json     # nombre y versión
 │   └── hooks/register.tsx             # código del mod
