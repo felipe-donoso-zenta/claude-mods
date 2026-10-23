@@ -1,6 +1,6 @@
 # claude-mods
 
-Mods privados de Claude Code: `account-rotator` y `dev-panel`.
+Mods privados de Claude Code: `account-rotator`, `dev-panel` y `statusline`.
 
 ## Instalar
 
@@ -12,6 +12,7 @@ En una sesion de Claude Code:
 /plugin marketplace add felipe-donoso-zenta/claude-mods
 /plugin install account-rotator@claude-mods
 /plugin install dev-panel@claude-mods
+/plugin install statusline@claude-mods
 ```
 
 Desde una shell:
@@ -20,6 +21,7 @@ Desde una shell:
 claude plugin marketplace add felipe-donoso-zenta/claude-mods
 claude plugin install account-rotator@claude-mods
 claude plugin install dev-panel@claude-mods
+claude plugin install statusline@claude-mods
 ```
 
 ## Versiones y avisos
@@ -37,6 +39,7 @@ Actualizar:
 claude plugin marketplace update claude-mods
 claude plugin update account-rotator@claude-mods
 claude plugin update dev-panel@claude-mods
+claude plugin update statusline@claude-mods
 ```
 
 ## Publicar una version

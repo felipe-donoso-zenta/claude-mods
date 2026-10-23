@@ -1,8 +1,23 @@
 {
   "name": "claude-mods",
-  "owner": { "name": "Felipe Donoso" },
+  "owner": {
+    "name": "Felipe Donoso"
+  },
   "plugins": [
-    { "name": "account-rotator", "source": "./account-rotator", "description": "Rota la cuenta de Claude y la de GitHub activas en una banda sobre el prompt." },
-    { "name": "dev-panel", "source": "./dev-panel", "description": "Panel de desarrollo: tarea, costo y contexto, limites, git de los repos y puertos." }
+    {
+      "name": "account-rotator",
+      "source": "./account-rotator",
+      "description": "Rota la cuenta de Claude y la de GitHub activas en una banda sobre el prompt."
+    },
+    {
+      "name": "dev-panel",
+      "source": "./dev-panel",
+      "description": "Panel de desarrollo: tarea, costo y contexto, limites, git de los repos y puertos."
+    },
+    {
+      "name": "statusline",
+      "source": "./statusline",
+      "description": "Banda sobre el prompt: modelo, rama git, cuenta de GitHub y contexto usado."
+    }
   ]
 }

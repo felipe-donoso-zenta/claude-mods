@@ -1,4 +1,17 @@
 {
-  "account-rotator": { "latest": "0.3.0", "minSafe": "0.3.0", "notes": "agrega aviso de actualizacion" },
-  "dev-panel": { "latest": "0.2.0", "minSafe": "0.2.0", "notes": "agrega aviso de actualizacion" }
+  "account-rotator": {
+    "latest": "0.3.0",
+    "minSafe": "0.3.0",
+    "notes": "agrega aviso de actualizacion"
+  },
+  "dev-panel": {
+    "latest": "0.2.0",
+    "minSafe": "0.2.0",
+    "notes": "agrega aviso de actualizacion"
+  },
+  "statusline": {
+    "latest": "0.1.0",
+    "minSafe": "0.1.0",
+    "notes": "primera version"
+  }
 }

@@ -1,0 +1,1 @@
+{ "name": "statusline", "version": "0.1.0", "description": "Banda sobre el prompt: modelo, rama git, cuenta de GitHub y contexto usado.", "types": "./types/index.d.ts" }
