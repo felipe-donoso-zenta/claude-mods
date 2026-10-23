@@ -3,12 +3,13 @@ import type { EngineInterface, Register } from 'claude-code'
 
 const FRAME_MS = 1000
 const GIT_MS = 5000
-const ACCOUNT_MS = 60000
-const CHECK_MS = 6 * 60 * 60 * 1000
+const ACCOUNT_MS = 15000
+// Hourly: one small request, so a security notice reaches the person within the hour.
+const CHECK_MS = 60 * 60 * 1000
 const FRAMES = ['✻', '✽', '✺', '✹', '✺', '✽']
 const REPO = 'felipe-donoso-zenta/claude-mods'
 const MARKETPLACE = 'claude-mods'
-const GIT = ['git', '-c', 'core.fsmonitor=false']
+const GIT = ['git', '--no-optional-locks', '-c', 'core.fsmonitor=false']
 
 const C = { spark: '#d7875f', model: '#ffaf5f', branch: '#5fafff', account: '#af87ff', ok: '#5faf5f', warn: '#d7af5f', bad: '#d75f5f' }
 
@@ -34,7 +35,10 @@ async function checkUpdate($: EngineInterface): Promise<string> {
       ['gh', 'api', '-H', 'Accept: application/vnd.github.raw', `repos/${REPO}/contents/versions.json`],
       { timeoutMs: 10000 },
     )
-    const entry = JSON.parse(stdout)[name]
+    const raw = JSON.parse(stdout)[name]
+    // versions.json is text from the network: only a plain version and a short line without control characters get through.
+    const version = (v: unknown) => (typeof v === 'string' && /^\d+\.\d+\.\d+$/.test(v) ? v : undefined)
+    const entry = { latest: version(raw?.latest), minSafe: version(raw?.minSafe), notes: typeof raw?.notes === 'string' ? raw.notes.replace(/[\u0000-\u001f\u007f-\u009f]/g, ' ').slice(0, 120) : undefined }
     const command = `claude plugin update ${name}@${MARKETPLACE}`
     if (entry?.minSafe && cmp(current, entry.minSafe) < 0) {
       $.ui.toast(`⚠ ${name} v${current} tiene bugs o vulnerabilidades corregidas (minima segura v${entry.minSafe}). Actualiza ya: ${command}`, { timeoutMs: 20000 })
@@ -50,19 +54,42 @@ async function checkUpdate($: EngineInterface): Promise<string> {
   return ''
 }
 
+// One call, and no optional locks: the status line must never get in the way of the person's own git.
 async function readGit($: EngineInterface) {
-  const run = (args: string[]) => $.process.run([...GIT, ...args], { timeoutMs: 800 }).then(r => r.stdout.trim()).catch(() => undefined)
-  const branch = await run(['rev-parse', '--abbrev-ref', 'HEAD'])
-  if (!branch) return { branch: '', dirty: 0, ahead: 0, behind: 0 }
-  const dirty = ((await run(['status', '--porcelain'])) ?? '').split('\n').filter(Boolean).length
-  const [behind = 0, ahead = 0] = ((await run(['rev-list', '--left-right', '--count', '@{u}...HEAD'])) ?? '').split(/\s+/).map(Number)
-  return { branch, dirty, ahead, behind }
+  const none = { branch: '', dirty: 0, ahead: 0, behind: 0 }
+  try {
+    const { stdout } = await $.process.run([...GIT, 'status', '--porcelain=v1', '-b'], { timeoutMs: 2000 })
+    const [head = '', ...rest] = stdout.split('\n')
+    if (!head.startsWith('## ')) return none
+    return {
+      branch: head.slice(3).split('...')[0]!.replace(/^No commits yet on /, '').replace(/[\u0000-\u001f\u007f-\u009f]/g, ' '),
+      dirty: rest.filter(Boolean).length,
+      ahead: Number(head.match(/ahead (\d+)/)?.[1] ?? 0),
+      behind: Number(head.match(/behind (\d+)/)?.[1] ?? 0),
+    }
+  } catch {
+    return none
+  }
 }
 
+// The active account is in gh's hosts file: reading it costs nothing, where `gh auth status` calls GitHub each time.
+let lastGh = 0
 async function readAccount($: EngineInterface) {
+  const home = $.plugin.root.split(/[\/]\.claude[\/]/)[0]
+  for (const file of [`${home}/AppData/Roaming/GitHub CLI/hosts.yml`, `${home}/.config/gh/hosts.yml`]) {
+    try {
+      const login = (await $.fs.read(file)).match(/^\s{4}user:\s*(\S+)/m)?.[1]
+      if (login) return login.replace(/[^\w-]/g, '')
+    } catch {
+      // not there: try the next
+    }
+  }
+  if (Date.now() - lastGh < 5 * 60 * 1000) return ''
+  lastGh = Date.now()
   try {
     const { stdout, stderr } = await $.process.run(['gh', 'auth', 'status'], { timeoutMs: 5000 })
-    const active = `${stdout}\n${stderr}`.split(/(?=✓ Logged in|X Failed)/).find(b => /Active account: true/.test(b))
+    const active = `${stdout}
+${stderr}`.split(/(?=✓ Logged in|X Failed)/).find(b => /Active account: true/.test(b))
     return active?.match(/account (\S+)/)?.[1] ?? ''
   } catch {
     return ''

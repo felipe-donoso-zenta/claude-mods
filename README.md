@@ -24,7 +24,7 @@ claude plugin install statusline@claude-mods
 
 ## Versiones y avisos
 
-Cada mod tiene su `version` en `.claude-plugin/plugin.json` (semver). Al iniciar sesion, y cada 6 horas, compara su version con `versions.json` de este repo:
+Cada mod tiene su `version` en `.claude-plugin/plugin.json` (semver). Al iniciar sesion, y cada hora, compara su version con `versions.json` de este repo:
 
 - `latest`: ultima version publicada. Si la instalada es menor, avisa con un toast.
 - `minSafe`: version minima sin bugs ni vulnerabilidades conocidas. Si la instalada es menor, el aviso es urgente (⚠, 20 s).

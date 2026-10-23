@@ -4,8 +4,8 @@ Repo privado con mods de Claude Code: https://github.com/felipe-donoso-zenta/cla
 
 | Mod | Que hace | Version |
 | --- | --- | --- |
-| `dev-panel` | Panel de desarrollo: tarea, costo y contexto, limites, git de los repos y puertos | 0.6.0 |
-| `statusline` | Banda sobre el prompt: modelo y esfuerzo, rama git, cuenta de GitHub y contexto usado | 0.2.0 |
+| `dev-panel` | Panel de desarrollo: tarea, costo y contexto, limites, git de los repos y puertos | 0.6.1 |
+| `statusline` | Banda sobre el prompt: modelo y esfuerzo, rama git, cuenta de GitHub y contexto usado | 0.2.1 |
 
 Se instalan juntos y no repiten datos:
 
@@ -53,7 +53,7 @@ Dibuja una sola linea, con colores, justo encima del prompt:
 | `⎇ rama` | Rama de git; solo aparece dentro de un repo. `✓` sin cambios o `●N` con N archivos modificados; `↑N` (verde) commits por subir, `↓N` (rojo) commits por bajar | cada 5 s |
 | `◉ cuenta` | Cuenta activa de `gh`, para saber con cual haras commit o push | cada 60 s |
 | `▰▱` y `%` | Contexto usado de la conversacion en 10 celdas: verde hasta 60 %, amarillo desde 60 %, rojo desde 80 % (conviene `/compact`) | cada 1 s |
-| `↑ vX` o `⚠ vX desactualizado` | Solo si el mod esta atras: hay version nueva, o la tuya tiene bugs o vulnerabilidades conocidas. Tambien sale un toast | al iniciar y cada 6 h |
+| `↑ vX` o `⚠ vX desactualizado` | Solo si el mod esta atras: hay version nueva, o la tuya tiene bugs o vulnerabilidades conocidas. Tambien sale un toast | al iniciar y cada hora |
 
 Notas:
 
@@ -69,7 +69,7 @@ Notas:
 
 ## 5. Avisos de actualizacion
 
-Al iniciar sesion, y luego cada 6 horas, cada mod compara su version con `versions.json` del repo (leido con `gh`, usando tu propia sesion de GitHub):
+Al iniciar sesion, y luego cada hora, cada mod compara su version con `versions.json` del repo (leido con `gh`, usando tu propia sesion de GitHub):
 
 | Campo | Significado | Aviso |
 | --- | --- | --- |

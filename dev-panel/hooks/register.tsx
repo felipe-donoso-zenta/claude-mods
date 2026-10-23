@@ -7,7 +7,8 @@ const PANE = 'dev-panel'
 
 const REPO = 'felipe-donoso-zenta/claude-mods'
 const MARKETPLACE = 'claude-mods'
-const CHECK_MS = 6 * 60 * 60 * 1000
+// Hourly: one small request, so a security notice reaches the person within the hour.
+const CHECK_MS = 60 * 60 * 1000
 
 type Status = { name: string; current: string; latest?: string; minSafe?: string; notes?: string }
 
@@ -32,7 +33,10 @@ async function checkUpdate($: EngineInterface): Promise<Status> {
       ['gh', 'api', '-H', 'Accept: application/vnd.github.raw', `repos/${REPO}/contents/versions.json`],
       { timeoutMs: 10000 },
     )
-    const entry = JSON.parse(stdout)[name]
+    const raw = JSON.parse(stdout)[name]
+    // versions.json is text from the network: only a plain version and a short line without control characters get through.
+    const version = (v: unknown) => (typeof v === 'string' && /^\d+\.\d+\.\d+$/.test(v) ? v : undefined)
+    const entry = { latest: version(raw?.latest), minSafe: version(raw?.minSafe), notes: typeof raw?.notes === 'string' ? raw.notes.replace(/[\u0000-\u001f\u007f-\u009f]/g, ' ').slice(0, 120) : undefined }
     return { name, current, latest: entry?.latest, minSafe: entry?.minSafe, notes: entry?.notes }
   } catch {
     return { name, current }
@@ -59,7 +63,8 @@ const MAX_FILES = 5
 const MAX_PORTS = 8
 const COMPACT_WIDTH = 24
 const MAX_REPOS = 8
-const GIT = ['git', '-c', 'core.fsmonitor=false']
+// No optional locks: reading status must never block the person's own git.
+const GIT = ['git', '--no-optional-locks', '-c', 'core.fsmonitor=false']
 const DEV_PROCESSES = /^(node|bun|deno|java|python|pythonw|dotnet|php|ruby|go|docker|com\.docker.*|wslrelay|vite|ng|firebase|caddy|nginx)$/i
 // Absolute, so a powershell.exe dropped in a project folder is never the one that runs.
 const POWERSHELL = 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe'
@@ -132,7 +137,7 @@ async function findRepos ($: EngineInterface, cwd: string) {
 }
 
 const WIN_PORTS =
-  '$ErrorActionPreference="SilentlyContinue"; Get-NetTCPConnection -State Listen | ForEach-Object { "$($_.LocalPort) $((Get-Process -Id $_.OwningProcess).ProcessName)" }'
+  '$ErrorActionPreference="SilentlyContinue"; $c = Get-NetTCPConnection -State Listen; $n = @{}; Get-Process -Id ($c.OwningProcess | Sort-Object -Unique) | ForEach-Object { $n[[int]$_.Id] = $_.ProcessName }; $c | ForEach-Object { "$($_.LocalPort) $($n[[int]$_.OwningProcess])" }'
 
 /** Text from a repo (commit subject, branch, file name), a prompt or a tool call is untrusted: no control characters, so no escape sequence reaches the terminal. */
 const clean = (text: string) => text.replace(/[\u0000-\u001f\u007f-\u009f]/g, ' ')
@@ -227,7 +232,11 @@ async function refreshWorld ($: EngineInterface) {
   }
 }
 
+// The port scan starts a PowerShell: it runs every third pass (30 s), the git status every pass.
+let scans = 0
+
 async function scanWorld ($: EngineInterface) {
+  const isPortPass = scans++ % 3 === 0
   const cwd = await $.session.cwd()
 
   try {
@@ -237,12 +246,12 @@ async function scanWorld ($: EngineInterface) {
       try {
         // A repo's own config can name a program for git to run (core.fsmonitor): off, since these may be repos nobody has read.
         const status = await $.process.run([...GIT, 'status', '--porcelain=v1', '-b'], { cwd: root, timeoutMs: 5000 })
-        const [head, ...rest] = status.stdout.split('\n')
+        const [head = '', ...rest] = status.stdout.split('\n')
         const files = rest.filter(Boolean).map(line => clean(line.slice(3)))
         const log = await $.process.run([...GIT, 'log', '-1', '--format=%h %s'], { cwd: root, timeoutMs: 5000 }).catch(() => undefined)
         found.push({
           name: clean(base(root)),
-          branch: clean(head.replace(/^## /, '').split('...')[0]),
+          branch: clean(head.replace(/^## /, '').split('...')[0] ?? ''),
           changes: files.length,
           ahead: Number(head.match(/ahead (\d+)/)?.[1] ?? 0),
           behind: Number(head.match(/behind (\d+)/)?.[1] ?? 0),
@@ -258,7 +267,7 @@ async function scanWorld ($: EngineInterface) {
     await update($, repos, () => [])
   }
 
-  try {
+  if (isPortPass) try {
     const { stdout } = await $.process.run([POWERSHELL, '-NoProfile', '-Command', WIN_PORTS], { timeoutMs: 8000 })
     const seen = new Map<number, string>()
     for (const line of stdout.split(/\r?\n/)) {
@@ -447,7 +456,8 @@ export const register: Register = on => {
   on('tool.call', async ($, e, next) => {
     if (!e.agentId) {
       const name = clean(e.tool).slice(0, 40)
-      const file = (e.input as { file_path?: unknown } | undefined)?.file_path
+      // The engine hands a tool call's arguments as fields of the event itself, not under an `input` key.
+      const file = (e as { file_path?: unknown }).file_path
       const changed = FILE_TOOLS.has(e.tool) && typeof file === 'string' ? clean(file).split(/[\\/]/).pop()?.slice(0, 60) : undefined
       await update($, activity, a => {
         const tools = a.tools.map(([n, c]) => [n, c] as [string, number])
@@ -463,7 +473,7 @@ export const register: Register = on => {
 
   // The model's own checklist is the "current task".
   on('tool.call', { tool: 'TodoWrite' }, async ($, e, next) => {
-    const input = e.input as { todos?: Array<{ content: string; status: Todo['status'] }> }
+    const input = e as { todos?: Array<{ content: string; status: Todo['status'] }> }
     if (Array.isArray(input.todos)) {
       const list = input.todos.slice(0, 50).map(t => ({
         content: clean(String(t.content ?? '')).slice(0, 200),

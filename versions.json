@@ -1,12 +1,12 @@
 {
   "dev-panel": {
-    "latest": "0.6.0",
-    "minSafe": "0.2.0",
-    "notes": "ajustes rediseñados"
+    "latest": "0.6.1",
+    "minSafe": "0.6.1",
+    "notes": "corrige tareas y archivos editados que no se mostraban; endurece el chequeo de versiones"
   },
   "statusline": {
-    "latest": "0.2.0",
-    "minSafe": "0.1.0",
-    "notes": "agrega esfuerzo junto al modelo"
+    "latest": "0.2.1",
+    "minSafe": "0.2.1",
+    "notes": "endurece el chequeo de versiones y reduce procesos"
   }
 }
