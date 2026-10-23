@@ -83,10 +83,10 @@ Ejemplo de `versions.json`:
 claude-mods/
 ├── .claude-plugin/marketplace.json   # lista los mods para /plugin install
 ├── versions.json                     # latest y minSafe por mod
-├── account-rotator/
-│   ├── .claude-plugin/plugin.json    # nombre y version
-│   └── hooks/register.tsx            # codigo del mod
-└── dev-panel/  (igual)
+├── dev-panel/
+└── statusline/
+    ├── .claude-plugin/plugin.json    # nombre y version
+    └── hooks/register.tsx            # codigo del mod
 ```
 
 ## 8. Problemas comunes
