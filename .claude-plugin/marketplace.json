@@ -5,11 +5,6 @@
   },
   "plugins": [
     {
-      "name": "account-rotator",
-      "source": "./account-rotator",
-      "description": "Rota la cuenta de Claude y la de GitHub activas en una banda sobre el prompt."
-    },
-    {
       "name": "dev-panel",
       "source": "./dev-panel",
       "description": "Panel de desarrollo: tarea, costo y contexto, limites, git de los repos y puertos."

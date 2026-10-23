@@ -4,7 +4,6 @@ Repo privado con mods de Claude Code: https://github.com/felipe-donoso-zenta/cla
 
 | Mod | Que hace | Version |
 | --- | --- | --- |
-| `account-rotator` | Muestra y rota en una banda la cuenta de Claude y la de GitHub activas | 0.3.0 |
 | `dev-panel` | Panel de desarrollo: tarea, costo y contexto, limites, git de los repos y puertos | 0.2.0 |
 | `statusline` | Banda sobre el prompt: modelo, rama git, cuenta de GitHub y contexto usado | 0.1.0 |
 
@@ -20,7 +19,6 @@ En una sesion de Claude Code:
 
 ```
 /plugin marketplace add felipe-donoso-zenta/claude-mods
-/plugin install account-rotator@claude-mods
 /plugin install dev-panel@claude-mods
 /plugin install statusline@claude-mods
 ```
@@ -29,14 +27,12 @@ Desde una shell:
 
 ```
 claude plugin marketplace add felipe-donoso-zenta/claude-mods
-claude plugin install account-rotator@claude-mods
 claude plugin install dev-panel@claude-mods
 claude plugin install statusline@claude-mods
 ```
 
 ## 3. Saber en que version estas
 
-- `account-rotator`: la version rota en la banda sobre el prompt (`▲ account-rotator v0.3.0`).
 - `dev-panel`: escribe `/panel version`.
 - En cualquier caso: `claude plugin list`.
 
@@ -55,7 +51,6 @@ Si no hay red o `gh` no tiene sesion, el chequeo se salta en silencio.
 
 ```
 claude plugin marketplace update claude-mods
-claude plugin update account-rotator@claude-mods
 claude plugin update dev-panel@claude-mods
 claude plugin update statusline@claude-mods
 ```
@@ -77,7 +72,7 @@ Ejemplo de `versions.json`:
 
 ```json
 {
-  "account-rotator": { "latest": "0.3.1", "minSafe": "0.3.1", "notes": "fix de seguridad en lectura de credenciales" },
+  "statusline": { "latest": "0.1.1", "minSafe": "0.1.1", "notes": "fix de seguridad en lectura de credenciales" },
   "dev-panel": { "latest": "0.2.0", "minSafe": "0.2.0", "notes": "" }
 }
 ```

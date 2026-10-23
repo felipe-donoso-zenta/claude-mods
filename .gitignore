@@ -1,3 +1,4 @@
 types/
 .claude-plugin/types/
 node_modules/
+account-rotator/
