@@ -4,6 +4,56 @@ import type { EngineInterface, Register, RenderNode } from 'claude-code'
 import type { Activity, Live, Port, Prefs, Repo, Section, Stats, Style, Todo } from '../types'
 
 const PANE = 'dev-panel'
+
+const REPO = 'felipe-donoso-zenta/claude-mods'
+const MARKETPLACE = 'claude-mods'
+const CHECK_MS = 6 * 60 * 60 * 1000
+
+type Status = { name: string; current: string; latest?: string; minSafe?: string; notes?: string }
+
+function cmp(a: string, b: string): number {
+  const x = a.split('.').map(Number)
+  const y = b.split('.').map(Number)
+  for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0)
+  return 0
+}
+
+// Compares this mod's version with versions.json in the repo; gh carries the person's own GitHub auth, so the private repo is readable.
+async function checkUpdate($: EngineInterface): Promise<Status> {
+  const name = $.plugin.name
+  let current = '?'
+  try {
+    current = JSON.parse(await $.fs.read(`${$.plugin.root}/.claude-plugin/plugin.json`)).version ?? '?'
+  } catch {
+    return { name, current }
+  }
+  try {
+    const { stdout } = await $.process.run(
+      ['gh', 'api', '-H', 'Accept: application/vnd.github.raw', `repos/${REPO}/contents/versions.json`],
+      { timeoutMs: 10000 },
+    )
+    const entry = JSON.parse(stdout)[name]
+    return { name, current, latest: entry?.latest, minSafe: entry?.minSafe, notes: entry?.notes }
+  } catch {
+    return { name, current }
+  }
+}
+
+function announce($: EngineInterface, s: Status): void {
+  const update = `claude plugin update ${s.name}@${MARKETPLACE}`
+  if (s.minSafe && cmp(s.current, s.minSafe) < 0) {
+    $.ui.toast(`⚠ ${s.name} v${s.current} tiene bugs o vulnerabilidades corregidas (minima segura v${s.minSafe}). Actualiza ya: ${update}${s.notes ? ` · ${s.notes}` : ''}`, { timeoutMs: 20000 })
+  } else if (s.latest && cmp(s.current, s.latest) < 0) {
+    $.ui.toast(`${s.name} v${s.current}: hay v${s.latest}. Actualiza: ${update}`, { timeoutMs: 10000 })
+  }
+}
+
+function versionLine(s: Status): string {
+  if (s.minSafe && cmp(s.current, s.minSafe) < 0) return `⚠ ${s.name} v${s.current} desactualizado (v${s.minSafe}+)`
+  if (s.latest && cmp(s.current, s.latest) < 0) return `↑ ${s.name} v${s.current} → v${s.latest}`
+  return `${s.name} v${s.current}`
+}
+
 const REFRESH_MS = 10000
 const MAX_FILES = 5
 const MAX_PORTS = 8
@@ -305,6 +355,7 @@ async function play ($: EngineInterface, tune: keyof typeof TUNES) {
 export const register: Register = on => {
   let isStarted = false
   let turnStartUsd = 0
+  let status: Status | undefined
 
   on('session.start', async ($, e, next) => {
     await $.command.register({
@@ -327,6 +378,13 @@ export const register: Register = on => {
       isStarted = true
       await refreshWorld($)
       $.clock.every(REFRESH_MS, () => { void refreshWorld($) })
+      const check = async () => {
+        const before = status && versionLine(status)
+        status = await checkUpdate($)
+        if (versionLine(status) !== before) announce($, status)
+      }
+      void check()
+      $.clock.every(CHECK_MS, () => { void check() })
     }
     void openPane($, (await read($, style)).isCompact)
     return next(e)
@@ -334,6 +392,7 @@ export const register: Register = on => {
 
   on('command.run', { command: 'panel' }, async ($, e) => {
     const [verb, arg] = e.args.trim().split(/\s+/)
+    if (verb === 'version') return { text: versionLine(status ?? (await checkUpdate($))) }
     if (verb === 'settings' || verb === 'ajustes') await update($, view, () => 'settings')
     else if (verb === 'theme' && hasOwn(THEMES, arg)) await restyle($, s => ({ ...s, theme: arg }))
     else if (verb === 'theme') return { text: `Temas: ${THEME_NAMES.join(', ')}` }

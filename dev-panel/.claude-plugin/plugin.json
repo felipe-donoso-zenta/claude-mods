@@ -1,1 +1,1 @@
-{ "name": "dev-panel", "version": "0.1.0", "description": "Universal dev pane: current task, cost and context, rate limits, git of the repos around the session, and the dev ports listening", "types": "./types/index.d.ts" }
+{ "name": "dev-panel", "version": "0.2.0", "description": "Universal dev pane: current task, cost and context, rate limits, git of the repos around the session, and the dev ports listening", "types": "./types/index.d.ts" }
