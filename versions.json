@@ -5,13 +5,13 @@
     "notes": "parche de seguridad: no ejecuta programas plantados en repos clonados"
   },
   "statusline": {
-    "latest": "0.2.6",
+    "latest": "0.3.0",
     "minSafe": "0.2.2",
-    "notes": "corrige codigos de color que se veian como texto en la barra"
+    "notes": "vuelve la barra con colores via statusLine; el mod mantiene el script"
   },
   "mods": {
-    "latest": "0.1.0",
+    "latest": "0.1.1",
     "minSafe": "0.1.0",
-    "notes": "primera version"
+    "notes": "instalar explica el bloque statusLine"
   }
 }

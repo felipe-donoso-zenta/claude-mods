@@ -1,1 +1,1 @@
-{ "name": "statusline", "version": "0.2.6", "description": "Banda bajo el prompt: modelo, rama git, cuenta de GitHub y contexto usado.", "types": "./types/index.d.ts" }
+{ "name": "statusline", "version": "0.3.0", "description": "Barra de estado con colores: modelo y esfuerzo, rama git, cuenta de GitHub y contexto usado. El mod mantiene el script al día y avisa de parches." }

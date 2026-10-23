@@ -4,9 +4,9 @@ Mods privados para Claude Code: una **línea de estado** y un **panel de desarro
 
 | Mod | Qué hace | Versión |
 | --- | --- | --- |
-| [`statusline`](#statusline) | Banda bajo el prompt: modelo y esfuerzo, rama git, cuenta de GitHub y contexto usado | 0.2.6 |
+| [`statusline`](#statusline) | Barra de estado con colores: modelo y esfuerzo, rama git, cuenta de GitHub y contexto usado | 0.3.0 |
 | [`dev-panel`](#dev-panel) | Panel lateral: tarea, costo y límites, actividad, puertos y git de todos tus repos | 0.6.2 |
-| [`mods`](#el-skill-mods) | Skill `/mods`: instala, actualiza y revisa los otros mods por ti | 0.1.0 |
+| [`mods`](#el-skill-mods) | Skill `/mods:mods`: instala, actualiza y revisa los otros mods por ti | 0.1.1 |
 
 Se instalan juntos y **no repiten datos**:
 
@@ -45,7 +45,7 @@ claude plugin install dev-panel@claude-mods
 
 Luego `/reload-plugins` o abre una sesión nueva.
 
-> Si ya tenías una `statusLine` en `settings.json`, verás dos barras. Quita ese bloque para dejar solo el mod.
+> La barra necesita el bloque `statusLine` en `settings.json` (ver [statusline](#statusline)). Si ya tenías otro, este lo reemplaza.
 
 ## El skill /mods
 
@@ -69,23 +69,34 @@ Comprueba antes tu sesión de `gh` y el acceso al repo, usa solo los comandos de
 
 ## statusline
 
-Una sola línea de texto, en su propia fila debajo del prompt (donde va la línea de estado). El motor solo acepta texto plano ahí, así que sin colores:
+La barra de estado de Claude Code, con colores, en su propia fila debajo del prompt:
 
 ```
-✺ sonnet-5-5 · high  │  ⎇ main ●3 ↑1  │  ◉ felipe-donoso-zenta  │  ▰▰▱▱▱▱▱▱▱▱ 9%
+✺ Sonnet 5.5 · medium  │  ⎇ main ●3 ↑1  │  ◉ felipe-donoso-zenta  │  ▰▰▱▱▱▱▱▱▱▱ 30%
 ```
 
-| Segmento | Qué muestra | Se refresca |
-| --- | --- | --- |
-| `✺` y modelo | Glifo que rota entre `✻ ✽ ✺ ✹` y el nombre corto del modelo | 1 s |
-| `· esfuerzo` | Esfuerzo de razonamiento junto al modelo (`medium`, `high`, `max`…). Desde el inicio sale el que configuraste; tras cada turno, el que realmente usó la petición | 5 s y por turno |
-| `⎇ rama` | Solo dentro de un repo. `✓` sin cambios o `●N` archivos modificados; `↑N` (verde) commits por subir, `↓N` (rojo) por bajar | 5 s |
-| `◉ cuenta` | Cuenta activa de `gh`: con cuál harás commit o push | 15 s |
-| `▰▱ %` | Contexto usado, en 10 celdas. Verde hasta 60 %, amarillo desde 60 %, rojo desde 80 % (conviene `/compact`) | 1 s |
-| `↑ vX` / `⚠ vX desactualizado` | **Solo si el mod está atrás.** Hay versión nueva, o la tuya tiene bugs o vulnerabilidades. También sale un toast | al iniciar y cada hora |
+| Segmento | Qué muestra |
+| --- | --- |
+| `✺` y modelo | Glifo que rota entre `✻ ✽ ✺ ✹` y el nombre del modelo |
+| `· esfuerzo` | El esfuerzo de razonamiento real de la sesión (`medium`, `high`, `max`…), el mismo que usa Claude Code |
+| `⎇ rama` | Solo dentro de un repo. `✓` sin cambios o `●N` archivos modificados; `↑N` (verde) commits por subir, `↓N` (rojo) por bajar |
+| `◉ cuenta` | Cuenta activa de `gh`: con cuál harás commit o push |
+| `▰▱ %` | Contexto usado, en 10 celdas. Verde hasta 60 %, amarillo desde 60 %, rojo desde 80 % (conviene `/compact`) |
+| `↑ statusline vX` / `⚠ … desactualizado` | **Solo si el mod está atrás.** Hay versión nueva, o la tuya tiene bugs o vulnerabilidades. También sale un toast |
 
-- No tiene comandos ni opciones.
-- Para ver su versión cuando está al día: `claude plugin list`.
+**Cómo funciona.** Claude Code solo pinta colores en la barra que sale de su ajuste `statusLine`, que ejecuta un script cada segundo. El mod incluye ese script (`bin/statusline.js`) y, al iniciar cada sesión, lo copia a `~/.claude/statusline/statusline.js` si cambió, así que una actualización del mod llega sola a la barra. El mod además revisa cada hora si hay parches y deja el aviso en `~/.claude/statusline/update.txt`, que el script muestra.
+
+**Activarla (una sola vez).** Agrega esto a `~/.claude/settings.json`; el skill [`/mods:mods`](#el-skill-mods) lo hace por ti, con tu permiso:
+
+```json
+"statusLine": {
+  "type": "command",
+  "command": "node C:/Users/<tu-usuario>/.claude/statusline/statusline.js",
+  "refreshInterval": 1
+}
+```
+
+Requiere Node. Si usas Orca, el script le reenvía los datos como antes (solo si está instalado).
 
 ## dev-panel
 
@@ -205,7 +216,8 @@ claude-mods/
 │   └── skills/mods/SKILL.md           # el skill /mods
 ├── statusline/
 │   ├── .claude-plugin/plugin.json     # nombre y versión
-│   └── hooks/register.tsx             # código del mod
+│   ├── bin/statusline.js              # la barra: script que ejecuta Claude Code
+│   └── hooks/register.tsx             # copia el script y avisa de parches
 └── dev-panel/
     ├── .claude-plugin/plugin.json
     └── hooks/register.tsx
@@ -218,6 +230,6 @@ claude-mods/
 | `marketplace add` falla | La cuenta activa de `gh` no tiene acceso al repo. Cambia con `gh auth switch` |
 | No aparece ningún aviso | Revisa `gh auth status` y que la cuenta pueda leer el repo |
 | Sigue la versión vieja tras actualizar | Ejecuta `/reload-plugins` o abre una sesión nueva |
-| Veo dos barras de estado | Quita el bloque `statusLine` de `settings.json` |
+| No veo la barra | Falta el bloque `statusLine` en `settings.json`, o aún no abriste una sesión con el mod para que copie el script |
 | Instalé una versión anterior a los avisos | No trae el chequeo: actualiza una vez a mano |
 | Las opciones del panel no responden | Están plegadas: pulsa `▸ mostrar opciones` |

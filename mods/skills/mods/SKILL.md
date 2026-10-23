@@ -67,7 +67,13 @@ claude plugin install statusline@claude-mods
 claude plugin install dev-panel@claude-mods
 ```
 
-Si el usuario pidió solo uno, instala solo ese. Al terminar, comprueba si `~/.claude/settings.json` tiene un bloque `statusLine`: si lo tiene, avisa que verá dos barras y pregunta si quiere quitarlo; no lo edites sin su sí.
+Si el usuario pidió solo uno, instala solo ese. Si instalaste `statusline`, la barra necesita este bloque en `~/.claude/settings.json` (el mod copia el script a `~/.claude/statusline/statusline.js` al iniciar la próxima sesión):
+
+```json
+"statusLine": { "type": "command", "command": "node C:/Users/<usuario>/.claude/statusline/statusline.js", "refreshInterval": 1 }
+```
+
+Revisa si ya existe un `statusLine`. Si falta, ofrécelo; si hay uno distinto, explica que este lo reemplazaría. Haz una copia de `settings.json` y edítalo solo con el sí del usuario.
 
 ## Modo `actualizar`
 
