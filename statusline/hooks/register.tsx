@@ -115,27 +115,21 @@ async function readEffort($: EngineInterface, model: string) {
   }
 }
 
-const ESC = String.fromCharCode(27)
-const paint = (code: string, text: string) => `${ESC}[${code}m${text}${ESC}[0m`
-
-/** The bar as one line of colored text: what `$.ui.status` pins on its own row under the prompt. */
+/** The bar as one line of plain text: what `$.ui.status` pins on its own row under the prompt. It takes text only, so no colors. */
 function barText(s: Snapshot): string {
   if (s.model === '') return ''
-  const parts = [paint('38;5;173', FRAMES[s.frame % FRAMES.length]!) + ' ' + paint('1;38;5;215', s.model) + (s.effort === '' ? '' : paint('90', ` · ${s.effort}`))]
+  const parts = [`${FRAMES[s.frame % FRAMES.length]} ${s.model}${s.effort === '' ? '' : ` · ${s.effort}`}`]
   if (s.branch !== '') {
-    let sync = ''
-    if (s.ahead > 0) sync += paint('32', ` ↑${s.ahead}`)
-    if (s.behind > 0) sync += paint('31', ` ↓${s.behind}`)
-    parts.push(paint('38;5;75', `⎇ ${s.branch}`) + (s.dirty > 0 ? paint('33', ` ●${s.dirty}`) : paint('32', ' ✓')) + sync)
+    const sync = `${s.ahead > 0 ? ` ↑${s.ahead}` : ''}${s.behind > 0 ? ` ↓${s.behind}` : ''}`
+    parts.push(`⎇ ${s.branch} ${s.dirty > 0 ? `●${s.dirty}` : '✓'}${sync}`)
   }
-  if (s.account !== '') parts.push(paint('38;5;141', `◉ ${s.account}`))
+  if (s.account !== '') parts.push(`◉ ${s.account}`)
   if (s.percent !== null) {
     const filled = Math.round(s.percent / 10)
-    const code = s.percent >= 80 ? '31' : s.percent >= 60 ? '33' : '32'
-    parts.push(paint(code, '▰'.repeat(filled)) + paint('90', '▱'.repeat(10 - filled)) + paint(code, ` ${Math.round(s.percent)}%`))
+    parts.push(`${'▰'.repeat(filled)}${'▱'.repeat(10 - filled)} ${Math.round(s.percent)}%`)
   }
-  if (s.update !== '') parts.push(paint('33', s.update))
-  return parts.join(paint('90', '  │  '))
+  if (s.update !== '') parts.push(s.update)
+  return parts.join('  │  ')
 }
 
 export const register: Register = on => {
