@@ -517,7 +517,6 @@ export const register: Register = on => {
     const when = await read($, at)
     const look = await read($, style)
     const p = await read($, prefs)
-    const now_ = await read($, live)
     const screen = await read($, view)
     const act = await read($, activity)
     const fold = await read($, folded)
@@ -540,8 +539,6 @@ export const register: Register = on => {
     const clip = (text: string) => (look.isCompact && text.length > COMPACT_WIDTH ? `${text.slice(0, COMPACT_WIDTH - 1)}…` : text)
     const themeName = look.theme.padEnd(6)
     const control = (isOn: boolean) => (isOn ? '●' : '○')
-    const model = now_.model || (s ? shortModel(s.model) : '—')
-    const effort = now_.effort || 'auto'
     const toggleSection = (id: Section) => restyle($, o => ({ ...o, hidden: o.hidden.includes(id) ? o.hidden.filter(h => h !== id) : [...o.hidden, id] }))
     const nextTheme = () => restyle($, o => ({ ...o, theme: THEME_NAMES[(THEME_NAMES.indexOf(o.theme) + 1) % THEME_NAMES.length] ?? o.theme }))
     const nextBudget = () => setPrefs($, o => ({ ...o, budgetUsd: BUDGET_STEPS[(BUDGET_STEPS.indexOf(o.budgetUsd) + 1) % BUDGET_STEPS.length] ?? 0 }))
@@ -576,18 +573,6 @@ export const register: Register = on => {
       )
     }
 
-    // Always the first line of the pane: what answers, and how hard it thinks.
-    const header = (
-      <Box flexDirection="column">
-        <Text>
-          <Text bold color={pal.accent}>◆ {clip(model)}</Text>
-          <Text dimColor>  esfuerzo </Text>
-          <Text color={effort === 'max' || effort === 'xhigh' ? pal.warn : pal.accent}>{effort}</Text>
-        </Text>
-        {gap}
-      </Box>
-    )
-
     if (screen === 'settings') {
       const row = (label: string, button: RenderNode) => (
         <Box flexDirection="row">
@@ -597,7 +582,6 @@ export const register: Register = on => {
       )
       return frame(
         <Box flexDirection="column">
-          {header}
           {heading('✦', 'Ajustes')}
           {gap}
           <Text bold>Avisos</Text>
@@ -637,7 +621,6 @@ export const register: Register = on => {
 
     return frame(
       <Box flexDirection="column">
-        {header}
         {isShown('task') ? (
           <Box flexDirection="column">
             {heading('▶', 'Tarea', list.length > 0 ? `${done}/${list.length}` : '')}
@@ -665,7 +648,6 @@ export const register: Register = on => {
             </Text>
             {look.isCompact && s.turnUsd > 0 ? <Text dimColor>+{money(s.turnUsd)} turno</Text> : null}
             {p.budgetUsd > 0 ? meter(look.isCompact ? 'pres' : 'Presup.', budgetPercent, `de ${money(p.budgetUsd)}`) : null}
-            {meter(look.isCompact ? 'ctx' : 'Contexto', s.contextPercent, `${tokens(s.contextTokens)}/${tokens(s.window)}`)}
             {s.limits.map(l => meter(l.kind === 'five_hour' ? '5 h' : look.isCompact ? 'sem' : 'Semana', l.percentUsed))}
             {gap}
           </Box>

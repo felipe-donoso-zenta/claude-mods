@@ -1,12 +1,12 @@
 {
   "dev-panel": {
-    "latest": "0.3.1",
+    "latest": "0.4.0",
     "minSafe": "0.2.0",
-    "notes": "opciones ordenadas, sin atajos duplicados"
+    "notes": "ya no repite modelo ni contexto: eso vive en statusline"
   },
   "statusline": {
-    "latest": "0.1.0",
+    "latest": "0.2.0",
     "minSafe": "0.1.0",
-    "notes": "primera version"
+    "notes": "agrega esfuerzo junto al modelo"
   }
 }

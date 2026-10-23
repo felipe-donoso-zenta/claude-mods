@@ -12,8 +12,8 @@ const GIT = ['git', '-c', 'core.fsmonitor=false']
 
 const C = { spark: '#d7875f', model: '#ffaf5f', branch: '#5fafff', account: '#af87ff', ok: '#5faf5f', warn: '#d7af5f', bad: '#d75f5f' }
 
-type Snapshot = { frame: number; model: string; branch: string; dirty: number; ahead: number; behind: number; account: string; percent: number | null; update: string }
-const EMPTY: Snapshot = { frame: 0, model: '', branch: '', dirty: 0, ahead: 0, behind: 0, account: '', percent: null, update: '' }
+type Snapshot = { frame: number; model: string; branch: string; dirty: number; ahead: number; behind: number; account: string; percent: number | null; update: string; effort: string }
+const EMPTY: Snapshot = { frame: 0, model: '', effort: '', branch: '', dirty: 0, ahead: 0, behind: 0, account: '', percent: null, update: '' }
 const snapshot = atom({ plugin: 'statusline', key: 'snapshot' } as const, EMPTY)
 
 const shortModel = (id: string) => id.replace(/^claude-/, '').replace(/-\d{8}$/, '')
@@ -71,6 +71,8 @@ async function readAccount($: EngineInterface) {
 
 export const register: Register = on => {
   let isStarted = false
+  let liveModel = ''
+  let liveEffort = ''
 
   on('session.start', async ($, e, next) => {
     const started = await next(e)
@@ -82,7 +84,8 @@ export const register: Register = on => {
         const usage = await $.session.usage().catch(() => undefined)
         void patch({
           frame: Math.floor(Date.now() / 1000) % FRAMES.length,
-          model: shortModel(await $.session.model().catch(() => '')),
+          model: liveModel || shortModel(await $.session.model().catch(() => '')),
+          effort: liveEffort,
           percent: usage?.context.percent ?? null,
         })
       }
@@ -97,6 +100,15 @@ export const register: Register = on => {
     }
 
     return started
+  })
+
+  // The model and effort the request really goes out with, after any downgrade.
+  on('turn.step', async function* ($, e, next) {
+    if (!e.agentId) {
+      liveModel = shortModel(e.model)
+      liveEffort = e.effort === undefined ? '' : String(e.effort).replace(/[^\w-]/g, '')
+    }
+    return yield* next(e)
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
@@ -116,6 +128,7 @@ export const register: Register = on => {
         <Box>
           <Text color={C.spark}>{FRAMES[s.frame % FRAMES.length]} </Text>
           <Text bold color={C.model}>{s.model}</Text>
+          {s.effort === '' ? null : <Text dimColor> · {s.effort}</Text>}
           {s.branch === '' ? null : (
             <Box>
               {sep}

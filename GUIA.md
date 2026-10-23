@@ -4,8 +4,15 @@ Repo privado con mods de Claude Code: https://github.com/felipe-donoso-zenta/cla
 
 | Mod | Que hace | Version |
 | --- | --- | --- |
-| `dev-panel` | Panel de desarrollo: tarea, costo y contexto, limites, git de los repos y puertos | 0.3.1 |
-| `statusline` | Banda sobre el prompt: modelo, rama git, cuenta de GitHub y contexto usado | 0.1.0 |
+| `dev-panel` | Panel de desarrollo: tarea, costo y contexto, limites, git de los repos y puertos | 0.4.0 |
+| `statusline` | Banda sobre el prompt: modelo y esfuerzo, rama git, cuenta de GitHub y contexto usado | 0.2.0 |
+
+Se instalan juntos y no repiten datos:
+
+| Dato | Donde vive |
+| --- | --- |
+| Modelo, esfuerzo, rama actual, cuenta de GitHub, contexto usado | `statusline` (lo que necesitas ver siempre, de un vistazo) |
+| Tarea en curso, costo y presupuesto, limites 5 h y semanal, actividad, puertos, git de todos los repos | `dev-panel` (lo que cambia mientras Claude trabaja) |
 
 ## 1. Requisitos
 
@@ -42,6 +49,7 @@ Dibuja una sola linea, con colores, justo encima del prompt:
 | Segmento | Que muestra | Se refresca |
 | --- | --- | --- |
 | `✺` y modelo | Glifo que rota entre `✻ ✽ ✺ ✹` y el nombre corto del modelo en uso | cada 1 s |
+| `· esfuerzo` | Esfuerzo de razonamiento junto al modelo (`high`, `max`...), el que realmente usa la peticion | por turno |
 | `⎇ rama` | Rama de git; solo aparece dentro de un repo. `✓` sin cambios o `●N` con N archivos modificados; `↑N` (verde) commits por subir, `↓N` (rojo) commits por bajar | cada 5 s |
 | `◉ cuenta` | Cuenta activa de `gh`, para saber con cual haras commit o push | cada 60 s |
 | `▰▱` y `%` | Contexto usado de la conversacion en 10 celdas: verde hasta 60 %, amarillo desde 60 %, rojo desde 80 % (conviene `/compact`) | cada 1 s |
