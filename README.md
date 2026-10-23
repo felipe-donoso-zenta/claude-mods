@@ -4,7 +4,7 @@ Mods privados para Claude Code: una **línea de estado** y un **panel de desarro
 
 | Mod | Qué hace | Versión |
 | --- | --- | --- |
-| [`statusline`](#statusline) | Banda bajo el prompt: modelo y esfuerzo, rama git, cuenta de GitHub y contexto usado | 0.2.4 |
+| [`statusline`](#statusline) | Banda bajo el prompt: modelo y esfuerzo, rama git, cuenta de GitHub y contexto usado | 0.2.5 |
 | [`dev-panel`](#dev-panel) | Panel lateral: tarea, costo y límites, actividad, puertos y git de todos tus repos | 0.6.2 |
 | [`mods`](#el-skill-mods) | Skill `/mods`: instala, actualiza y revisa los otros mods por ti | 0.1.0 |
 
@@ -69,7 +69,7 @@ Comprueba antes tu sesión de `gh` y el acceso al repo, usa solo los comandos de
 
 ## statusline
 
-Una sola línea, con colores, justo debajo del prompt, bajo la línea de ayuda:
+Una sola línea, con colores, en su propia fila debajo del prompt (donde va la línea de estado):
 
 ```
 ✺ sonnet-5-5 · high  │  ⎇ main ●3 ↑1  │  ◉ felipe-donoso-zenta  │  ▰▰▱▱▱▱▱▱▱▱ 9%

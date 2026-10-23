@@ -13,8 +13,6 @@ const MARKETPLACE = 'claude-mods'
 // Every call starts from the mod's own folder instead, and git is pointed at the repo with -C.
 const GIT = ['git', '--no-optional-locks', '-c', 'core.fsmonitor=false', '-c', 'log.showSignature=false']
 
-const C = { spark: '#d7875f', model: '#ffaf5f', branch: '#5fafff', account: '#af87ff', ok: '#5faf5f', warn: '#d7af5f', bad: '#d75f5f' }
-
 type Snapshot = { frame: number; model: string; branch: string; dirty: number; ahead: number; behind: number; account: string; percent: number | null; update: string; effort: string }
 const EMPTY: Snapshot = { frame: 0, model: '', effort: '', branch: '', dirty: 0, ahead: 0, behind: 0, account: '', percent: null, update: '' }
 const snapshot = atom({ plugin: 'statusline', key: 'snapshot' } as const, EMPTY)
@@ -117,6 +115,29 @@ async function readEffort($: EngineInterface, model: string) {
   }
 }
 
+const ESC = String.fromCharCode(27)
+const paint = (code: string, text: string) => `${ESC}[${code}m${text}${ESC}[0m`
+
+/** The bar as one line of colored text: what `$.ui.status` pins on its own row under the prompt. */
+function barText(s: Snapshot): string {
+  if (s.model === '') return ''
+  const parts = [paint('38;5;173', FRAMES[s.frame % FRAMES.length]!) + ' ' + paint('1;38;5;215', s.model) + (s.effort === '' ? '' : paint('90', ` · ${s.effort}`))]
+  if (s.branch !== '') {
+    let sync = ''
+    if (s.ahead > 0) sync += paint('32', ` ↑${s.ahead}`)
+    if (s.behind > 0) sync += paint('31', ` ↓${s.behind}`)
+    parts.push(paint('38;5;75', `⎇ ${s.branch}`) + (s.dirty > 0 ? paint('33', ` ●${s.dirty}`) : paint('32', ' ✓')) + sync)
+  }
+  if (s.account !== '') parts.push(paint('38;5;141', `◉ ${s.account}`))
+  if (s.percent !== null) {
+    const filled = Math.round(s.percent / 10)
+    const code = s.percent >= 80 ? '31' : s.percent >= 60 ? '33' : '32'
+    parts.push(paint(code, '▰'.repeat(filled)) + paint('90', '▱'.repeat(10 - filled)) + paint(code, ` ${Math.round(s.percent)}%`))
+  }
+  if (s.update !== '') parts.push(paint('33', s.update))
+  return parts.join(paint('90', '  │  '))
+}
+
 export const register: Register = on => {
   let isStarted = false
   let liveModel = ''
@@ -140,12 +161,13 @@ export const register: Register = on => {
           liveEffort = ''
           configEffort = await readEffort($, current)
         }
-        void patch({
+        await patch({
           frame: Math.floor(Date.now() / 1000) % FRAMES.length,
           model: liveModel || shortModel(current),
           effort: liveEffort || configEffort,
           percent: usage?.context.percent ?? null,
         })
+        $.ui.status(barText(await read($, snapshot)))
       }
       await tick()
       void readAccount($).then(account => patch({ account }))
@@ -175,47 +197,5 @@ export const register: Register = on => {
       liveEffort = e.effort === undefined ? '' : String(e.effort).replace(/[^\w-]/g, '')
     }
     return yield* next(e)
-  })
-
-  // Under the prompt, below the engine's own hint line, where a status line sits.
-  on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
-    const beneath = await next(e)
-    const s = await read($, snapshot)
-    if (s.model === '') return beneath
-
-    const { Box, Text } = $.ui.resolve(e)
-    const sep = <Text dimColor>  │  </Text>
-    const color = s.percent === null ? C.ok : s.percent >= 80 ? C.bad : s.percent >= 60 ? C.warn : C.ok
-    const filled = s.percent === null ? 0 : Math.round(s.percent / 10)
-
-    return (
-      <Box flexDirection="column">
-        {beneath}
-        <Box>
-          <Text color={C.spark}>{FRAMES[s.frame % FRAMES.length]} </Text>
-          <Text bold color={C.model}>{s.model}</Text>
-          {s.effort === '' ? null : <Text dimColor> · {s.effort}</Text>}
-          {s.branch === '' ? null : (
-            <Box>
-              {sep}
-              <Text color={C.branch}>⎇ {s.branch}</Text>
-              {s.dirty > 0 ? <Text color={C.warn}> ●{s.dirty}</Text> : <Text color={C.ok}> ✓</Text>}
-              {s.ahead > 0 ? <Text color={C.ok}> ↑{s.ahead}</Text> : null}
-              {s.behind > 0 ? <Text color={C.bad}> ↓{s.behind}</Text> : null}
-            </Box>
-          )}
-          {s.account === '' ? null : <Box>{sep}<Text color={C.account}>◉ {s.account}</Text></Box>}
-          {s.percent === null ? null : (
-            <Box>
-              {sep}
-              <Text color={color}>{'▰'.repeat(filled)}</Text>
-              <Text dimColor>{'▱'.repeat(10 - filled)}</Text>
-              <Text color={color}> {Math.round(s.percent)}%</Text>
-            </Box>
-          )}
-          {s.update === '' ? null : <Box>{sep}<Text color={C.warn}>{s.update}</Text></Box>}
-        </Box>
-      </Box>
-    )
   })
 }

@@ -5,9 +5,9 @@
     "notes": "parche de seguridad: no ejecuta programas plantados en repos clonados"
   },
   "statusline": {
-    "latest": "0.2.4",
+    "latest": "0.2.5",
     "minSafe": "0.2.2",
-    "notes": "la barra pasa debajo del prompt"
+    "notes": "la barra va en su propia fila debajo del prompt"
   },
   "mods": {
     "latest": "0.1.0",
