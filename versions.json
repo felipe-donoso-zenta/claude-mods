@@ -1,8 +1,8 @@
 {
   "dev-panel": {
-    "latest": "0.5.1",
+    "latest": "0.6.0",
     "minSafe": "0.2.0",
-    "notes": "aviso de parche arriba, opciones plegadas, sin altura forzada"
+    "notes": "ajustes rediseñados"
   },
   "statusline": {
     "latest": "0.2.0",

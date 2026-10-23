@@ -603,49 +603,72 @@ export const register: Register = on => {
     ) : null
 
     if (screen === 'settings') {
-      const row = (label: string, button: RenderNode) => (
+      const labelWidth = look.isCompact ? 9 : 14
+      // `● Label      key: value`: the dot is the state at a glance (green on, grey off); the button is the value and its key.
+      const row = (label: string, button: RenderNode, isOn?: boolean) => (
         <Box flexDirection="row">
-          <Text dimColor>  {label.padEnd(look.isCompact ? 9 : 14)}</Text>
+          {isOn === undefined ? <Text>  </Text> : <Text color={isOn ? pal.ok : undefined} dimColor={!isOn}>{control(isOn)} </Text>}
+          <Text dimColor>{label.padEnd(labelWidth)}</Text>
           {button}
         </Box>
       )
+      const hint = (text: string) => (look.isCompact ? null : <Text dimColor>  {''.padEnd(labelWidth)}{text}</Text>)
+      const toggle = (key: string, hotkey: string, yes: string, no: string, isOn: boolean, flip: (o: Prefs) => Prefs) => (
+        <Button key={key} plain hotkey={hotkey} label={isOn ? yes : no} onPress={() => setPrefs($, flip)} />
+      )
+      const swatch = (name: string) => {
+        const t = THEMES[name] ?? pal
+        return <Text><Text color={t.accent}>■</Text><Text color={t.ok}>■</Text><Text color={t.warn}>■</Text><Text color={t.bad}>■</Text></Text>
+      }
       return frame(
         <Box flexDirection="column">
           {banner}
           {heading('✦', 'Ajustes')}
+          {look.isCompact ? null : <Text dimColor>Pulsa la tecla que aparece junto a cada opción.</Text>}
           {gap}
+
           <Text bold>Avisos</Text>
-          {row('Avisos', <Button key="notify" plain hotkey="a" label={`${control(p.isNotifyOn)} ${p.isNotifyOn ? 'activados' : 'apagados'}`} onPress={() => setPrefs($, o => ({ ...o, isNotifyOn: !o.isNotifyOn }))} />)}
-          {row('Sonido', <Button key="sound" plain hotkey="s" label={`${control(p.isSoundOn)} ${p.isSoundOn ? 'sí' : 'no'}`} onPress={() => setPrefs($, o => ({ ...o, isSoundOn: !o.isSoundOn }))} />)}
-          {row('Permisos', <Button key="permission" plain hotkey="p" label={`${control(p.isPermissionOn)} ${p.isPermissionOn ? 'avisar' : 'no'}`} onPress={() => setPrefs($, o => ({ ...o, isPermissionOn: !o.isPermissionOn }))} />)}
-          {row('Errores', <Button key="error" plain hotkey="e" label={`${control(p.isErrorOn)} ${p.isErrorOn ? 'avisar' : 'no'}`} onPress={() => setPrefs($, o => ({ ...o, isErrorOn: !o.isErrorOn }))} />)}
-          {row(look.isCompact ? 'Desde' : 'Turno desde', <Button key="min" plain hotkey="m" label={`${String(p.minSeconds).padStart(3)} s`} onPress={nextMin} />)}
-          {row('Alertas', <Button key="alert" plain hotkey="l" label={`${control(p.isAlertOn)} ${p.isAlertOn ? 'activas' : 'apagadas'}`} onPress={() => setPrefs($, o => ({ ...o, isAlertOn: !o.isAlertOn }))} />)}
-          {row('Presupuesto', <Button key="budget" plain hotkey="u" label={`${p.budgetUsd > 0 ? `$${String(p.budgetUsd).padEnd(6)}` : 'sin tope '}`} onPress={nextBudget} />)}
-          {row('', (
-            <Button
-              key="test"
-              plain
-              hotkey="x"
-              label="probar avisos"
-              onPress={() => {
-                $.ui.toast('Prueba: listo')
-                void play($, 'done').then(() => play($, 'ask')).then(() => play($, 'problem'))
-              }}
-            />
-          ))}
+          {row('Avisos', toggle('notify', 'a', 'activados', 'apagados', p.isNotifyOn, o => ({ ...o, isNotifyOn: !o.isNotifyOn })), p.isNotifyOn)}
+          {row('Sonido', toggle('sound', 's', 'con sonido', 'en silencio', p.isSoundOn, o => ({ ...o, isSoundOn: !o.isSoundOn })), p.isSoundOn)}
+          {row('Permisos', toggle('permission', 'p', 'avisar', 'no avisar', p.isPermissionOn, o => ({ ...o, isPermissionOn: !o.isPermissionOn })), p.isPermissionOn)}
+          {row('Errores', toggle('error', 'e', 'avisar', 'no avisar', p.isErrorOn, o => ({ ...o, isErrorOn: !o.isErrorOn })), p.isErrorOn)}
+          {row(look.isCompact ? 'Desde' : 'Turno desde', <Button key="min" plain hotkey="m" label={p.minSeconds === 0 ? 'siempre' : `más de ${p.minSeconds} s`} onPress={nextMin} />)}
+          {hint('Avisa al terminar solo los turnos largos.')}
           {gap}
+
+          <Text bold>Límites</Text>
+          {row('Alertas', toggle('alert', 'l', 'activas', 'apagadas', p.isAlertOn, o => ({ ...o, isAlertOn: !o.isAlertOn })), p.isAlertOn)}
+          {hint('Contexto al 80 %, límites de 5 h y semana.')}
+          {row('Presupuesto', <Button key="budget" plain hotkey="u" label={p.budgetUsd > 0 ? `$${p.budgetUsd} por sesión` : 'sin tope'} onPress={nextBudget} />, p.budgetUsd > 0)}
+          {hint('Avisa al 50, 80 y 100 % del tope.')}
+          {row('', <Button
+            key="test"
+            plain
+            hotkey="x"
+            label="probar avisos"
+            onPress={() => {
+              $.ui.toast('Prueba: listo')
+              void play($, 'done').then(() => play($, 'ask')).then(() => play($, 'problem'))
+            }}
+          />)}
+          {gap}
+
           <Text bold>Aspecto</Text>
-          {row('Tema', <Button key="theme" plain hotkey="t" label={`${themeName}`} onPress={nextTheme} />)}
-          {row('Vista', <Button key="compact" plain hotkey="c" label={`${look.isCompact ? 'compacta' : 'completa '}`} onPress={() => restyle($, o => ({ ...o, isCompact: !o.isCompact }))} />)}
+          {row('Tema', <Button key="theme" plain hotkey="t" label={look.theme} onPress={nextTheme} />)}
+          {look.isCompact ? null : <Text>  {''.padEnd(labelWidth)}{swatch(look.theme)}<Text dimColor>  acento · ok · aviso · error</Text></Text>}
+          {row('Vista', <Button key="compact" plain hotkey="c" label={look.isCompact ? 'compacta' : 'completa'} onPress={() => restyle($, o => ({ ...o, isCompact: !o.isCompact }))} />)}
+          {gap}
+
+          <Text bold>Secciones</Text>
           {SECTIONS.map((sec, i) =>
-            row(look.isCompact ? sec.label : `Sección ${sec.label}`, (
-              <Button key={`section-${sec.id}`} plain hotkey={String(i + 1)} label={`${isShown(sec.id) ? '● visible' : '○ oculta '}  [${i + 1}]`} onPress={() => toggleSection(sec.id)} />
-            )),
+            row(sec.label, <Button key={`section-${sec.id}`} plain hotkey={String(i + 1)} label={isShown(sec.id) ? 'visible' : 'oculta'} onPress={() => toggleSection(sec.id)} />, isShown(sec.id)),
           )}
           {gap}
-          <Button key="back" plain hotkey="b" label="volver" onPress={() => update($, view, () => 'main')} />
+
+          {row('', <Button key="reset" plain hotkey="z" label="restablecer aspecto" onPress={() => restyle($, () => DEFAULT_STYLE)} />)}
+          {row('', <Button key="back" plain hotkey="b" label="← volver al panel" onPress={() => update($, view, () => 'main')} />)}
           {gap}
+          {look.isCompact ? null : <Text dimColor>Comandos: /panel · /notify</Text>}
           {versionFooter}
         </Box>,
       )
