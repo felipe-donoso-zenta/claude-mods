@@ -167,6 +167,7 @@ function spark (values: number[]) {
   return values.map(v => (top <= 0 ? SPARK[0] : SPARK[Math.min(SPARK.length - 1, Math.floor((v / top) * (SPARK.length - 1)))])).join('')
 }
 
+const clock = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 const money = (usd: number) => `$${usd.toFixed(usd < 1 ? 3 : 2)}`
 const tokens = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 100000 ? 0 : 1)}k` : `${n}`)
 const base = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path
@@ -279,7 +280,7 @@ async function scanWorld ($: EngineInterface) {
   const previous = (await read($, stats))?.usd ?? 0
   const current = await readStats($, previous)
   await update($, stats, old => ({ ...current, turnUsd: old?.turnUsd ?? 0 }))
-  await update($, at, () => new Date().toLocaleTimeString())
+  await update($, at, () => clock(new Date()))
   await checkAlerts($, current)
 }
 
@@ -597,22 +598,22 @@ export const register: Register = on => {
       return frame(
         <Box flexDirection="column">
           {header}
-          {heading('⚙', 'Ajustes')}
+          {heading('✦', 'Ajustes')}
           {gap}
           <Text bold>Avisos</Text>
-          {row('Avisos', <Button key="notify" plain hotkey="a" label={`${control(p.isNotifyOn)} ${p.isNotifyOn ? 'activados' : 'apagados'}  [a]`} onPress={() => setPrefs($, o => ({ ...o, isNotifyOn: !o.isNotifyOn }))} />)}
-          {row('Sonido', <Button key="sound" plain hotkey="s" label={`${control(p.isSoundOn)} ${p.isSoundOn ? 'sí' : 'no'}  [s]`} onPress={() => setPrefs($, o => ({ ...o, isSoundOn: !o.isSoundOn }))} />)}
-          {row('Permisos', <Button key="permission" plain hotkey="p" label={`${control(p.isPermissionOn)} ${p.isPermissionOn ? 'avisar' : 'no'}  [p]`} onPress={() => setPrefs($, o => ({ ...o, isPermissionOn: !o.isPermissionOn }))} />)}
-          {row('Errores', <Button key="error" plain hotkey="e" label={`${control(p.isErrorOn)} ${p.isErrorOn ? 'avisar' : 'no'}  [e]`} onPress={() => setPrefs($, o => ({ ...o, isErrorOn: !o.isErrorOn }))} />)}
-          {row(look.isCompact ? 'Desde' : 'Turno desde', <Button key="min" plain hotkey="m" label={`${String(p.minSeconds).padStart(3)} s  [m]`} onPress={nextMin} />)}
-          {row('Alertas', <Button key="alert" plain hotkey="l" label={`${control(p.isAlertOn)} ${p.isAlertOn ? 'activas' : 'apagadas'}  [l]`} onPress={() => setPrefs($, o => ({ ...o, isAlertOn: !o.isAlertOn }))} />)}
-          {row('Presupuesto', <Button key="budget" plain hotkey="u" label={`${p.budgetUsd > 0 ? `$${String(p.budgetUsd).padEnd(6)}` : 'sin tope '}  [u]`} onPress={nextBudget} />)}
+          {row('Avisos', <Button key="notify" plain hotkey="a" label={`${control(p.isNotifyOn)} ${p.isNotifyOn ? 'activados' : 'apagados'}`} onPress={() => setPrefs($, o => ({ ...o, isNotifyOn: !o.isNotifyOn }))} />)}
+          {row('Sonido', <Button key="sound" plain hotkey="s" label={`${control(p.isSoundOn)} ${p.isSoundOn ? 'sí' : 'no'}`} onPress={() => setPrefs($, o => ({ ...o, isSoundOn: !o.isSoundOn }))} />)}
+          {row('Permisos', <Button key="permission" plain hotkey="p" label={`${control(p.isPermissionOn)} ${p.isPermissionOn ? 'avisar' : 'no'}`} onPress={() => setPrefs($, o => ({ ...o, isPermissionOn: !o.isPermissionOn }))} />)}
+          {row('Errores', <Button key="error" plain hotkey="e" label={`${control(p.isErrorOn)} ${p.isErrorOn ? 'avisar' : 'no'}`} onPress={() => setPrefs($, o => ({ ...o, isErrorOn: !o.isErrorOn }))} />)}
+          {row(look.isCompact ? 'Desde' : 'Turno desde', <Button key="min" plain hotkey="m" label={`${String(p.minSeconds).padStart(3)} s`} onPress={nextMin} />)}
+          {row('Alertas', <Button key="alert" plain hotkey="l" label={`${control(p.isAlertOn)} ${p.isAlertOn ? 'activas' : 'apagadas'}`} onPress={() => setPrefs($, o => ({ ...o, isAlertOn: !o.isAlertOn }))} />)}
+          {row('Presupuesto', <Button key="budget" plain hotkey="u" label={`${p.budgetUsd > 0 ? `$${String(p.budgetUsd).padEnd(6)}` : 'sin tope '}`} onPress={nextBudget} />)}
           {row('', (
             <Button
               key="test"
               plain
               hotkey="x"
-              label="♪ probar avisos  [x]"
+              label="probar avisos"
               onPress={() => {
                 $.ui.toast('Prueba: listo')
                 void play($, 'done').then(() => play($, 'ask')).then(() => play($, 'problem'))
@@ -621,15 +622,15 @@ export const register: Register = on => {
           ))}
           {gap}
           <Text bold>Aspecto</Text>
-          {row('Tema', <Button key="theme" plain hotkey="t" label={`${themeName}  [t]`} onPress={nextTheme} />)}
-          {row('Vista', <Button key="compact" plain hotkey="c" label={`${look.isCompact ? 'compacta' : 'completa '}  [c]`} onPress={() => restyle($, o => ({ ...o, isCompact: !o.isCompact }))} />)}
+          {row('Tema', <Button key="theme" plain hotkey="t" label={`${themeName}`} onPress={nextTheme} />)}
+          {row('Vista', <Button key="compact" plain hotkey="c" label={`${look.isCompact ? 'compacta' : 'completa '}`} onPress={() => restyle($, o => ({ ...o, isCompact: !o.isCompact }))} />)}
           {SECTIONS.map((sec, i) =>
             row(look.isCompact ? sec.label : `Sección ${sec.label}`, (
               <Button key={`section-${sec.id}`} plain hotkey={String(i + 1)} label={`${isShown(sec.id) ? '● visible' : '○ oculta '}  [${i + 1}]`} onPress={() => toggleSection(sec.id)} />
             )),
           )}
           {gap}
-          <Button key="back" plain hotkey="b" label="← volver  [b]" onPress={() => update($, view, () => 'main')} />
+          <Button key="back" plain hotkey="b" label="volver" onPress={() => update($, view, () => 'main')} />
         </Box>,
       )
     }
@@ -740,34 +741,43 @@ export const register: Register = on => {
           </Box>
         ) : null}
 
-        {/* Fixed-width labels, so a press never shifts its neighbours. */}
-        {heading('☰', 'Opciones', look.isCompact || !when ? '' : `actualizado ${when}`)}
-        <Box flexDirection="row">
-          <Button key="options" plain label={isOptionsFolded ? '▸ mostrar' : '▾ ocultar'} onPress={() => toggleFold(OPTIONS_KEY)} />
-        </Box>
-        {isOptionsFolded ? null : (
+        {heading('☰', 'Opciones', look.isCompact || !when ? '' : `act. ${when}`)}
+        <Button key="options" plain label={isOptionsFolded ? '▸ mostrar' : '▾ ocultar'} onPress={() => toggleFold(OPTIONS_KEY)} />
+        {isOptionsFolded ? null : look.isCompact ? (
+          <Box flexDirection="row" flexWrap="wrap">
+            <Button key="refresh" plain hotkey="r" label="↻" onPress={() => refreshWorld($)} />
+            <Text> </Text>
+            <Button key="theme" plain hotkey="t" label="◐" onPress={nextTheme} />
+            <Text> </Text>
+            <Button key="compact" plain hotkey="c" label="▢" onPress={() => restyle($, o => ({ ...o, isCompact: !o.isCompact }))} />
+            <Text> </Text>
+            <Button key="settings" plain hotkey="s" label="≡" onPress={() => update($, view, () => 'settings')} />
+          </Box>
+        ) : (
           <Box flexDirection="column">
-            <Box flexDirection="row" flexWrap="wrap">
-              <Button key="refresh" plain hotkey="r" label={look.isCompact ? '↻' : '↻ actualizar [r]'} onPress={() => refreshWorld($)} />
-              <Text>{look.isCompact ? ' ' : '   '}</Text>
-              <Button key="theme" plain hotkey="t" label={look.isCompact ? '◐' : `◐ tema ${themeName}[t]`} onPress={nextTheme} />
-              <Text>{look.isCompact ? ' ' : '   '}</Text>
-              <Button key="compact" plain hotkey="c" label={look.isCompact ? '▢' : '▢ compacto [c]'} onPress={() => restyle($, o => ({ ...o, isCompact: !o.isCompact }))} />
-              <Text>{look.isCompact ? ' ' : '   '}</Text>
-              <Button key="settings" plain hotkey="s" label={look.isCompact ? '⚙' : '⚙ ajustes [s]'} onPress={() => update($, view, () => 'settings')} />
+            <Box flexDirection="row">
+              <Button key="refresh" plain hotkey="r" label={'actualizar'.padEnd(16)} onPress={() => refreshWorld($)} />
+              <Button key="theme" plain hotkey="t" label={`tema ${look.theme}`} onPress={nextTheme} />
             </Box>
-            <Box flexDirection="row" flexWrap="wrap">
-              {SECTIONS.flatMap((sec, i) => [
-                i > 0 ? <Text key={`gap-${sec.id}`}>{look.isCompact ? ' ' : '   '}</Text> : null,
-                <Button
-                  key={`section-${sec.id}`}
-                  plain
-                  hotkey={String(i + 1)}
-                  label={look.isCompact ? control(isShown(sec.id)) : `${control(isShown(sec.id))} ${sec.label} [${i + 1}]`}
-                  onPress={() => toggleSection(sec.id)}
-                />,
-              ])}
+            <Box flexDirection="row">
+              <Button key="compact" plain hotkey="c" label={'compacto'.padEnd(16)} onPress={() => restyle($, o => ({ ...o, isCompact: !o.isCompact }))} />
+              <Button key="settings" plain hotkey="s" label="ajustes" onPress={() => update($, view, () => 'settings')} />
             </Box>
+            <Text> </Text>
+            <Text dimColor>Mostrar u ocultar secciones</Text>
+            {[SECTIONS.slice(0, 2), SECTIONS.slice(2, 4), SECTIONS.slice(4)].map(pair => (
+              <Box flexDirection="row">
+                {pair.map(sec => (
+                  <Button
+                    key={`section-${sec.id}`}
+                    plain
+                    hotkey={String(SECTIONS.indexOf(sec) + 1)}
+                    label={`${control(isShown(sec.id))} ${sec.label}`.padEnd(16)}
+                    onPress={() => toggleSection(sec.id)}
+                  />
+                ))}
+              </Box>
+            ))}
           </Box>
         )}
       </Box>,

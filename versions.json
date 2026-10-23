@@ -1,8 +1,8 @@
 {
   "dev-panel": {
-    "latest": "0.3.0",
+    "latest": "0.3.1",
     "minSafe": "0.2.0",
-    "notes": "rediseno visual del panel"
+    "notes": "opciones ordenadas, sin atajos duplicados"
   },
   "statusline": {
     "latest": "0.1.0",
